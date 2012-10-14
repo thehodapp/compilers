@@ -119,3 +119,4 @@ def contains_immediate_left_recursion((V, T, S, P)):
 G = (V, T, S, P)
 (Vh, Th, Sh, Ph) = H = eliminate_left_recursion(G)
 (Vj, Tj, Sj, Pj) = J = perform_left_factoring(H)
+print '\n'.join('%s %s' % (l,r) for (l,r) in Pj)
