@@ -8,20 +8,14 @@ void consume(NonTerminal);
 int match(Terminal);
 bool matchAny(Terminal*, int);
 
-
-Terminal(*lexTerminal)();
 NonTerminal top_nonterminal;
 Terminal currTerm;
 Symbol*** parseTable;
 
-void setup(NonTerminal myTop_nonterminal, Terminal(*myLexTerminal)()) {
-	lexTerminal = myLexTerminal;
-	top_nonterminal = myTop_nonterminal;
-	currTerm = myLexTerminal();
-	parseTable = parseTableGen();
-}
-
 void parse() {
+	top_nonterminal = firstNonTerminal();
+	currTerm = nextTerminal();
+	parseTable = parseTableGen();
 	consume(top_nonterminal);
 }
 
@@ -37,19 +31,22 @@ void consume(NonTerminal nonterminal) {
 	for(int i = 0; i < len; i++) {
 		printf("\ti = %d\n", i);
 		Symbol symb = toConsume[i];
-		if(symb < cTerminals) {
+		if(isTerminal(symb)) {
 			match(symb);
-		} else {
+		} else if (isNonTerminal(symb)) {
 			consume(symb);
+		} else {
+			printf("DATA ERROR\n");
+			printf("Encountered symbol %d, neither terminal nor nonterminal\n");
+			exit(-2);
 		}
 	}
-	printf("Finished consuming %d\n", nonterminal);
 }
 
 int match(Terminal terminal) {
 	if(currTerm == terminal) {
 		printf("Matched %d\n", currTerm);
-		currTerm = lexTerminal();
+		currTerm = nextTerminal();
 		return true;
 	}
 	return false;
@@ -63,24 +60,11 @@ bool matchAny(Terminal* terms, int length) {
 				return true;
 			}
 		}
-		currTerm = (*lexTerminal)();
+		currTerm = nextTerminal();
 	}
 }
 
-Terminal getTerminal(void);
 int main(int argv, char** argc) {
-	setup(NT_E, &getTerminal);
 	parse();
 	return 0;
-}
-
-int cursor = 0;
-Terminal getTerminal() {
-	Terminal terms[] = {T_F, T_LPAREN, T_V, T_PLUS, T_V, T_RPAREN, T_PLUS, T_V, T_EOF};
-	int len = sizeof(terms)/sizeof(terms[0]);
-	if(cursor < len) {
-		return terms[cursor++];
-	} else {
-		return terms[len-1];
-	}
 }

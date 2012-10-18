@@ -5,8 +5,10 @@ import copy
 
 G = (V, T, S, P)
 H = (Vh, Th, Sh, Ph) = perform_left_factoring(eliminate_left_recursion(G))
-print '\n'.join("%s -> %s" % (l,r) for (l,r) in Ph)
-print
+
+if __name__ == '__main__':
+	print '\n'.join("%s -> %s" % (l,r) for (l,r) in Ph)
+	print
 
 def firsts():
 	fir = defaultdict(set)
@@ -54,6 +56,7 @@ def follows():
 			break
 	return fol
 
-print '\n'.join("first[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in firsts().items() if v in Vh)
-print
-print '\n'.join("follow[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in follows().items() if v in Vh)
+if __name__ == '__main__':
+	print '\n'.join("first[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in firsts().items() if v in Vh)
+	print
+	print '\n'.join("follow[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in follows().items() if v in Vh)

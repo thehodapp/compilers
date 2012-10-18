@@ -1,5 +1,6 @@
 
 #ifndef DATA_H
+#include <stdbool.h>
 #define NT_E 6
 #define NT_P 7
 #define NT_T 8
@@ -20,6 +21,11 @@ extern Symbol* synchSets[3];
 extern int synchSetLengths[3];
 extern int cNonTerminals;
 extern int cTerminals;
+
+NonTerminal firstNonTerminal(void);
+Terminal nextTerminal(void);
+bool isTerminal(Symbol s);
+bool isNonTerminal(Symbol s);
 
 #define DATA_H
 #endif

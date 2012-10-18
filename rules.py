@@ -31,7 +31,8 @@ T = [
 	"[",
 	"]",
 	"+",
-	"-"
+	"-",
+	"..",
 ]
 
 V = [
@@ -68,7 +69,7 @@ P = [
 	("declarations", "declarations var id : type ;".split()),
 	("declarations", [""]),
 	("type", ["standard_type"]),
-	("type", "array [ num . . num ] of standard_type".split()),
+	("type", "array [ num .. num ] of standard_type".split()),
 	("standard_type", ["integer"]),
 	("standard_type", ["real"]),
 	("subprogram_declarations", "subprogram_declarations subprogram_declaration ;".split()),
