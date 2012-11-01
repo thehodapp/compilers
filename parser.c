@@ -93,18 +93,6 @@ int match(Terminal terminal) {
 	return false;
 }
 
-bool matchAny(Terminal* terms, int length) {
-	printf("Entering synch mode.\n");
-	while(true) {
-		for(int i = 0; i < length; i++) {
-			if(currTerm == terms[i]) {
-				return true;
-			}
-		}
-		currTerm = nextTerminal();
-	}
-}
-
 int main(int argv, char** argc) {
 	parse();
 	return 0;
