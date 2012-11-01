@@ -15,13 +15,6 @@ typedef int Symbol;
 typedef int Terminal;
 typedef int NonTerminal;
 
-Symbol*** parseTableGen(void);
-extern int* parseTableLengths[9];
-extern Symbol* synchSets[3];
-extern int synchSetLengths[3];
-extern int cNonTerminals;
-extern int cTerminals;
-
 NonTerminal firstNonTerminal(void);
 Terminal nextTerminal(void);
 bool isTerminal(Symbol s);
