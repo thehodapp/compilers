@@ -43,14 +43,8 @@ cCode = """
 #include <stdlib.h>
 #include <stdbool.h>
 #include "data.h"
-"""
-for v in Vh:
-	hCode += '#define %s __LINE__\n' % v
-for t in Th:
-	if t == '': continue
-	hCode += '#define %s __LINE__\n' % t
-hCode += "#define T_EOF __LINE__"
-cCode += """
+#include "p1/types.h"
+
 void parse(void);
 void consume(NonTerminal);
 int match(Terminal);
@@ -135,5 +129,3 @@ int main(int argv, char** argc) {
 }
 """
 print cCode
-print
-print hCode
