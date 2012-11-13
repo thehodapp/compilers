@@ -2,6 +2,9 @@ from rules import *
 import copy
 import itertools
 
+LEFT_RECURSION_SHIV = '_'
+LEFT_FACTORING_SHIV = '_'
+
 def remove_epsilon_productions((V, T, S, P)):
 	#identify set of nullable variables
 	Ve = set()
@@ -28,7 +31,9 @@ def remove_epsilon_productions((V, T, S, P)):
 	return (V, T, S, new_P)
 
 def eliminate_left_recursion((V, T, S, P)):
-	(V, T, S, P) = remove_epsilon_productions((V, T, S, P))
+	if contains_epsilon_productions((V, T, S, P)):
+		#print "contains ep prods"
+		(V, T, S, P) = remove_epsilon_productions((V, T, S, P))
 
 	new_P = copy.copy(P)
 	new_V = copy.copy(V)
@@ -43,7 +48,7 @@ def eliminate_left_recursion((V, T, S, P)):
 			beta = [r for r in rhss if r[0] and r[0] != v]
 			vprime = v
 			while vprime in V + new_V:
-				vprime += '\''
+				vprime += LEFT_RECURSION_SHIV
 			new_V.append(vprime)
 
 			for b in beta:
@@ -89,7 +94,7 @@ def perform_left_factoring((V, T, S, P)):
 		while conflict:
 			varprime = var
 			while varprime in new_V:
-				varprime += '*'
+				varprime += LEFT_FACTORING_SHIV
 			new_V.append(varprime)
 			alpha, rhss = conflict
 			
@@ -119,5 +124,7 @@ def contains_immediate_left_recursion((V, T, S, P)):
 if __name__ == '__main__':
 	G = (V, T, S, P)
 	(Vh, Th, Sh, Ph) = H = eliminate_left_recursion(G)
+	print '\n'.join('%s %s' % (l,r) for (l,r) in Ph)
+	print
 	(Vj, Tj, Sj, Pj) = J = perform_left_factoring(H)
 	print '\n'.join('%s %s' % (l,r) for (l,r) in Pj)
