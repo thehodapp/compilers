@@ -49,7 +49,8 @@ for v in Vh:
 for t in Th:
 	if t == '': continue
 	hCode += '#define %s __LINE__\n' % t
-cCode += """#define T_EOF __LINE__
+hCode += "#define T_EOF __LINE__"
+cCode += """
 void parse(void);
 void consume(NonTerminal);
 int match(Terminal);
