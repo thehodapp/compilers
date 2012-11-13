@@ -42,9 +42,14 @@ cCode = """
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "data.h"
-#include "p1/types.h"
+#include "p1/src/types.h"
 
+typedef enum Symbol Terminal;
+typedef enum {
+"""
+for v in Vh:
+	cCode += "\t%s," % v
+cCode += """} NonTerminal;
 void parse(void);
 void consume(NonTerminal);
 int match(Terminal);
