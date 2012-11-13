@@ -9,50 +9,56 @@ fol = follows()
 #construct table
 pt = defaultdict(lambda: defaultdict(list))
 
+def first(w):
+	if w == []:
+		return set([''])
+	if w[0] in Th:
+		return set([w[0]])
+	if w[0] in Vh:
+		if '' in fir[w[0]]:
+			return (fir[w[0]] - set([''])) | first(w[1:])
+		else:
+			return fir[w[0]]
+
 for (l,r) in Ph:
-	# construct first(r)
-	firstR = set()
-	if r[0] in Th:
-		firstR = set(r[0])
-	elif r[0] in Vh:
-		firstR = fir[r[0]]
-	elif r[0] == '':
-		firstR = set([''])
-	for symb in firstR:
-		print "symb = %s" % repr(symb)
-		if symb in Th:
-			parseTable[l][symb].append(r)
-		if symb == '':
+	#print "%s %s %s" % (l, r, first(r))
+	for symb in first(r):
+		if symb != '':
+			pt[l][symb].append(r)
+		else:
 			for symb in fol[l]:
-				parseTable[l][symb].append(r)
+				pt[l][symb].append(r)
 
 for v in Vh:
 	for t in Th:
-		if parseTable[v] and parseTable[l][t]:
-			if len(parseTable[v][t]) > 1:
+		if pt[v] and pt[l][t]:
+			if len(pt[v][t]) > 1:
 				print 'WTF'
-				print '\n'.join(', '.join(l) for l in parseTable[v][t])
+				print v, t, pt[v][t]
 				sys.exit()
 
+hCode = ""
 cCode = """
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "data.h"
-
+"""
+for v in Vh:
+	hCode += '#define %s __LINE__\n' % v
+for t in Th:
+	if t == '': continue
+	hCode += '#define %s __LINE__\n' % t
+cCode += """#define T_EOF __LINE__
 void parse(void);
 void consume(NonTerminal);
 int match(Terminal);
-bool matchAny(Terminal*, int);
 
-NonTerminal top_nonterminal;
 Terminal currTerm;
-Symbol*** parseTable;
 
 void parse() {
-	top_nonterminal = firstNonTerminal();
+	NonTerminal top_nonterminal = firstNonTerminal();
 	currTerm = nextTerminal();
-	parseTable = parseTableGen();
 	consume(top_nonterminal);
 }
 
@@ -60,19 +66,24 @@ void consume(NonTerminal term) {
 	switch(term) {
 """
 for v in Vh:
-	cCode += 'case %s:\n' % v
-	cCode += 'switch(currTerm) {\n'
+	cCode += '\t\tcase %s:\n' % v
+	cCode += '\t\t\tswitch(currTerm) {\n'
+	rulesGenerated = set()
 	for t in Th:
-		cCode += 'case %s:\n' % t
-		if pt[v][t] and pt[v][t][0]:
+		if t and pt[v][t] and pt[v][t][0] and tuple(pt[v][t][0]) not in rulesGenerated:
+			cCode += '\t\t\t\tcase %s:\n' % t
+			for otherT in Th:
+				if pt[v][t] == pt[v][otherT] and otherT != t:
+					cCode += '\t\t\t\tcase %s:\n' % otherT
 			for symb in pt[v][t][0]:
 				if symb in Vh:
-					cCode += 'consume(%s);\n' % symb
-				elif symb in Th:
-					cCode += 'match(%s);\n' % symb
-		cCode += 'break;\n'
-	cCode += '}'
-	cCode += 'break;\n'
+					cCode += '\t\t\t\t\tconsume(%s);\n' % symb
+				elif symb in Th and symb != '':
+					cCode += '\t\t\t\t\tmatch(%s);\n' % symb
+			cCode += '\t\t\t\t\tbreak;\n'
+			rulesGenerated.add(tuple(pt[v][t][0]))
+	cCode += '\t\t\t}\n'
+	cCode += '\t\t\tbreak;\n'
 cCode += """
 	}
 }
@@ -82,12 +93,20 @@ void synch(NonTerminal nt) {
 	int len;
 	switch(nt) {
 """
+varsGenerated = set()
+synch = {}
 for v in Vh:
-	synch = set(['T_EOF']) | fol[v]
-	cCode += 'case %s:\n' % v
-	cCode += 'synchSet = (Terminal[]){%s};\n' % ', '.join(synch)
-	cCode += 'len = %d;\n' % len(synch)
-	cCode += 'break;\n'
+	synch[v] = set(['T_EOF']) | fol[v]
+for v in synch:
+	if v not in varsGenerated:
+		ssv = synch[v]
+		generatingVars = [v for (v,s) in synch.items() if synch[v] == ssv]
+		for gv in generatingVars:
+			cCode += '\t\tcase %s:\n' % gv
+			varsGenerated.add(gv)
+		cCode += '\t\t\tsynchSet = (Terminal[]){%s};\n' % ', '.join(ssv)
+		cCode += '\t\t\tlen = %d;\n' % len(ssv)
+		cCode += '\t\t\tbreak;\n'
 cCode += """
 	}
 	while(true) {
@@ -102,7 +121,7 @@ cCode += """
 
 int match(Terminal terminal) {
 	if(currTerm == terminal) {
-		printf("Matched %d\n", currTerm);
+		printf("Matched %d\\n", currTerm);
 		currTerm = nextTerminal();
 		return true;
 	}
@@ -113,3 +132,7 @@ int main(int argv, char** argc) {
 	parse();
 	return 0;
 }
+"""
+print cCode
+print
+print hCode
