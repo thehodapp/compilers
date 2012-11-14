@@ -144,6 +144,7 @@ cCode += """
 				return;
 			}
 		}
+		printf("Throwing away \\"%s\\" (%s)\\n", currTerm.lexeme, convertConstantToString(currTerm.type));
 		currTerm = nextTerminal();
 	}
 }
