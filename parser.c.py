@@ -119,7 +119,6 @@ cCode += """
 void synch(NonTerminal nt) {
 	printf("Entering synch mode for non-terminal %s\\n", ntToString(nt));
 	int *synchSet;
-	int len;
 	switch(nt) {
 """
 varsGenerated = set()
@@ -134,7 +133,6 @@ for v in synch:
 			cCode += '\t\tcase %s:\n' % gv
 			varsGenerated.add(gv)
 		cCode += '\t\t\tsynchSet = (int[]){%s};\n' % ', '.join(ssv)
-		cCode += '\t\t\tlen = %d;\n' % len(ssv)
 		cCode += '\t\t\tbreak;\n'
 cCode += """
 	}
