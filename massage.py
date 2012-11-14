@@ -3,7 +3,7 @@ import copy
 import itertools
 
 LEFT_RECURSION_SHIV = '_'
-LEFT_FACTORING_SHIV = '_'
+LEFT_FACTORING_SHIV = '1'
 
 def remove_epsilon_productions((V, T, S, P)):
 	#identify set of nullable variables
@@ -102,6 +102,8 @@ def perform_left_factoring((V, T, S, P)):
 			for rhs in rhss:
 				new_P.remove((var, rhs))
 				beta = rhs[len(alpha):]
+				if beta == []:
+					beta = [''] # hotfix
 				new_P.append((varprime, beta))
 
 			conflict = obtainConflict(new_P, var)

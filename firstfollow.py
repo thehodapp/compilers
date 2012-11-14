@@ -1,3 +1,4 @@
+import sys
 from massage import *
 from collections import defaultdict
 import pprint
@@ -9,7 +10,7 @@ H = (Vh, Th, Sh, Ph) = perform_left_factoring(eliminate_left_recursion(G))
 #print Vh, Th
 
 if __name__ == '__main__':
-	print '\n'.join("%s -> %s" % (l,r) for (l,r) in Ph)
+	print '\n'.join(sorted("%s -> %s" % (l,r) for (l,r) in Ph))
 	print
 
 def firsts():
@@ -48,19 +49,25 @@ def follows():
 						fol[B].add(r[i+1])
 					else:
 						j = i+1
-						while j < len(r) and '' in fir[r[j]]:
+						while True:
+							if '-d' in sys.argv: print "Adding first(%s) to follow(%s)" % (r[j], B)
 							fol[B].update(fir[r[j]] - set(['']))
 							j += 1
+							if j >= len(r):
+								if '-d' in sys.argv: print "Adding follow(%s) to follow(%s)" % (l, B)
+								fol[B].update(fol[l])
+								break
+							if '' not in fir[r[j-1]]:
+								break
 
-					if all((ri, '') in Ph for ri in r[i:]):
-						fol[B].update(fol[l])
 				elif B in Vh and i == len(r)-1:
+					if '-d' in sys.argv: print "Adding follow(%s) to follow(%s)" % (l, B)
 					fol[B].update(fol[l])
 		if old == fol:
 			break
 	return fol
 
 if __name__ == '__main__':
-	print '\n'.join("first[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in firsts().items() if v in Vh)
+	print '\n'.join("first[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in sorted(firsts().items()) if v in Vh)
 	print
-	print '\n'.join("follow[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in follows().items() if v in Vh)
+	print '\n'.join("follow[%s] = %s" % (v, ', '.join(map(repr,s))) for (v,s) in sorted(follows().items()) if v in Vh)
