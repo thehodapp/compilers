@@ -27,7 +27,11 @@ for (l,r) in Ph:
 			pt[l][symb].append(r)
 		else:
 			for symb in fol[l]:
-				pt[l][symb].append(r)
+				if l.startswith('NT_STATEMENT1') and symb == 'T_ELSE':
+					# special-case: dangling else ambiguity
+					pass
+				else:
+					pt[l][symb].append(r)
 
 for v in Vh:
 	for t in Th:
