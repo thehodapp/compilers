@@ -2,6 +2,7 @@ import sys
 from firstfollow import *
 from massage import *
 
+Vh, Th = sorted(Vh), sorted(Th)
 H = (Vh, Th, Sh, Ph)
 fir = firsts()
 fol = follows()
@@ -21,7 +22,6 @@ def first(w):
 			return fir[w[0]]
 
 for (l,r) in Ph:
-	#print "%s %s %s" % (l, r, first(r))
 	for symb in first(r):
 		if symb != '':
 			pt[l][symb].append(r)
@@ -43,31 +43,48 @@ cCode = """
 #include <stdlib.h>
 #include <stdbool.h>
 #include "p1/src/types.h"
+#include "p1/src/machines.h"
 
-typedef enum Symbol Terminal;
+typedef MachineResult Terminal;
 typedef enum {
 """
 for v in Vh:
 	cCode += "\t%s," % v
 cCode += """} NonTerminal;
+
+char* ntToString(NonTerminal nt) {
+	switch(nt) {
+"""
+for v in Vh:
+	cCode += "case %s: return \"%s\"; " % (v,v)
+cCode += """}
+}
 void parse(void);
 void consume(NonTerminal);
-int match(Terminal);
+int match(int);
+void synch(NonTerminal);
+Terminal nextTerminal(void);
 
 Terminal currTerm;
+FILE *fSrc;
+char sLine[90];
+char *psLine;
 
 void parse() {
-	NonTerminal top_nonterminal = firstNonTerminal();
+"""
+cCode += "\tNonTerminal top_nonterminal = %s;" % Sh
+cCode += """
 	currTerm = nextTerminal();
 	consume(top_nonterminal);
 }
 
 void consume(NonTerminal term) {
+	printf("Attempting to consume %s; currTerm = %s (%s)\\n", ntToString(term), currTerm.lexeme, convertConstantToString(currTerm.type));
 	switch(term) {
 """
 for v in Vh:
 	cCode += '\t\tcase %s:\n' % v
-	cCode += '\t\t\tswitch(currTerm) {\n'
+	cCode += '\t\t\tswitch(currTerm.type) {\n'
 	rulesGenerated = set()
 	for t in Th:
 		if t and pt[v][t] and pt[v][t][0] and tuple(pt[v][t][0]) not in rulesGenerated:
@@ -82,6 +99,9 @@ for v in Vh:
 					cCode += '\t\t\t\t\tmatch(%s);\n' % symb
 			cCode += '\t\t\t\t\tbreak;\n'
 			rulesGenerated.add(tuple(pt[v][t][0]))
+	cCode += '\t\t\t\tdefault:\n'
+	cCode += '\t\t\t\t\tsynch(term);\n'
+	cCode += '\t\t\t\t\tbreak;\n'
 	cCode += '\t\t\t}\n'
 	cCode += '\t\t\tbreak;\n'
 cCode += """
@@ -89,7 +109,8 @@ cCode += """
 }
 
 void synch(NonTerminal nt) {
-	Terminal *synchSet;
+	printf("Entering synch mode for non-terminal %s\\n", ntToString(nt));
+	int *synchSet;
 	int len;
 	switch(nt) {
 """
@@ -104,14 +125,14 @@ for v in synch:
 		for gv in generatingVars:
 			cCode += '\t\tcase %s:\n' % gv
 			varsGenerated.add(gv)
-		cCode += '\t\t\tsynchSet = (Terminal[]){%s};\n' % ', '.join(ssv)
+		cCode += '\t\t\tsynchSet = (int[]){%s};\n' % ', '.join(ssv)
 		cCode += '\t\t\tlen = %d;\n' % len(ssv)
 		cCode += '\t\t\tbreak;\n'
 cCode += """
 	}
 	while(true) {
 		for(int i = 0; i < sizeof(synchSet)/sizeof(*synchSet); i++) {
-			if(currTerm = synchSet[i]) {
+			if(currTerm.type == synchSet[i]) {
 				return;
 			}
 		}
@@ -119,9 +140,9 @@ cCode += """
 	}
 }
 
-int match(Terminal terminal) {
-	if(currTerm == terminal) {
-		printf("Matched %d\\n", currTerm);
+int match(int termtype) {
+	if(currTerm.type == termtype) {
+		printf("Matched \\"%s\\" as %s\\n", currTerm.lexeme, convertConstantToString(currTerm.type));
 		currTerm = nextTerminal();
 		return true;
 	}
@@ -129,8 +150,29 @@ int match(Terminal terminal) {
 }
 
 int main(int argv, char** argc) {
+	char *sfSrc = argc[1];
+	fSrc = fopen(sfSrc, "r");
+	machinesInit("p1/data/reserved-words.txt");
 	parse();
 	return 0;
+}
+
+Terminal nextTerminal() {
+	if(!psLine) psLine = sLine;
+	if(!*psLine) {
+		fgets(sLine, sizeof(sLine), fSrc);
+		if(feof(fSrc)) {
+			sLine[0] = EOF;
+			sLine[1] = 0;
+		}
+		psLine = sLine;
+	}
+	MachineResult res = identifyToken(psLine);
+	psLine = res.newString;
+	if(res.type == T_WS) {
+		return nextTerminal();
+	}
+	return res;
 }
 """
 print cCode
