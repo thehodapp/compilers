@@ -49,6 +49,7 @@ cCode = """
 #include "p1/src/types.h"
 #include "p1/src/machines.h"
 
+int depth = 0;
 typedef MachineResult Terminal;
 typedef enum {
 """
@@ -83,7 +84,9 @@ cCode += """
 }
 
 void consume(NonTerminal term) {
-	printf("Attempting to consume %s; currTerm = %s (%s)\\n", ntToString(term), currTerm.lexeme, convertConstantToString(currTerm.type));
+	for(int i = 0; i < depth; i++) printf(" ");
+	printf("%s %s (%s)\\n", ntToString(term), currTerm.lexeme, convertConstantToString(currTerm.type));
+	depth++;
 	switch(term) {
 """
 for v in Vh:
@@ -110,6 +113,7 @@ for v in Vh:
 	cCode += '\t\t\tbreak;\n'
 cCode += """
 	}
+	depth--;
 }
 
 void synch(NonTerminal nt) {
@@ -146,6 +150,7 @@ cCode += """
 
 int match(int termtype) {
 	if(currTerm.type == termtype) {
+		for(int i = 0; i < depth; i++) printf(" ");
 		printf("Matched \\"%s\\" as %s\\n", currTerm.lexeme, convertConstantToString(currTerm.type));
 		currTerm = nextTerminal();
 		return true;
