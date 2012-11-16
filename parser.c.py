@@ -83,11 +83,11 @@ cCode += """
 	consume(top_nonterminal);
 }
 
-void consume(NonTerminal term) {
+void consume(NonTerminal nt) {
 	for(int i = 0; i < depth; i++) printf(" ");
-	printf("%s\\n", ntToString(term));
+	printf("%s\\n", ntToString(nt));
 	depth++;
-	switch(term) {
+	switch(nt) {
 """
 for v in Vh:
 	cCode += '\t\tcase %s:\n' % v
@@ -103,11 +103,11 @@ for v in Vh:
 				if symb in Vh:
 					cCode += '\t\t\t\t\tconsume(%s);\n' % symb
 				elif symb in Th and symb != '':
-					cCode += '\t\t\t\t\tif(!match(%s)) {synch(term); break;}\n' % symb
+					cCode += '\t\t\t\t\tif(!match(%s)) {synch(nt); break;}\n' % symb
 			cCode += '\t\t\t\t\tbreak;\n'
 			rulesGenerated.add(tuple(pt[v][t][0]))
 	cCode += '\t\t\t\tdefault:\n'
-	cCode += '\t\t\t\t\tsynch(term);\n'
+	cCode += '\t\t\t\t\tsynch(nt);\n'
 	cCode += '\t\t\t\t\tbreak;\n'
 	cCode += '\t\t\t}\n'
 	cCode += '\t\t\tbreak;\n'
