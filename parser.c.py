@@ -85,7 +85,7 @@ cCode += """
 
 void consume(NonTerminal term) {
 	for(int i = 0; i < depth; i++) printf(" ");
-	printf("%s %s (%s)\\n", ntToString(term), currTerm.lexeme, convertConstantToString(currTerm.type));
+	printf("%s\\n", ntToString(term));
 	depth++;
 	switch(term) {
 """
@@ -150,7 +150,9 @@ cCode += """
 int match(int termtype) {
 	if(currTerm.type == termtype) {
 		for(int i = 0; i < depth; i++) printf(" ");
-		printf("Matched \\"%s\\" as %s\\n", currTerm.lexeme, convertConstantToString(currTerm.type));
+		printf("%s\\n", convertConstantToString(currTerm.type));
+		for(int i = 0; i < depth+1; i++) printf(" ");
+		printf("\\"%s\\"\\n", currTerm.lexeme);
 		currTerm = nextTerminal();
 		return true;
 	}
