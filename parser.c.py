@@ -90,6 +90,8 @@ void consume(NonTerminal nt) {
 	switch(nt) {
 """
 for v in Vh:
+	labelName = '%s_synch' % v.lower()
+	labelUsed = False
 	cCode += '\t\tcase %s:\n' % v
 	cCode += '\t\t\tswitch(currTerm.type) {\n'
 	rulesGenerated = set()
@@ -103,10 +105,13 @@ for v in Vh:
 				if symb in Vh:
 					cCode += '\t\t\t\t\tconsume(%s);\n' % symb
 				elif symb in Th and symb != '':
-					cCode += '\t\t\t\t\tif(!match(%s)) {synch(nt); break;}\n' % symb
+					cCode += '\t\t\t\t\tif(!match(%s)) goto %s;\n' % (symb, labelName)
+					labelUsed = True
 			cCode += '\t\t\t\t\tbreak;\n'
 			rulesGenerated.add(tuple(pt[v][t][0]))
 	cCode += '\t\t\t\tdefault:\n'
+	if labelUsed: cCode += '\t\t\t\t%s:\n' % labelName
+	cCode += '\t\t\t\t\tprintf("Error: Expected one of %s, got %%s\\n", convertConstantToString(currTerm.type));\n' % ', '.join(fir[v])
 	cCode += '\t\t\t\t\tsynch(nt);\n'
 	cCode += '\t\t\t\t\tbreak;\n'
 	cCode += '\t\t\t}\n'
