@@ -20,15 +20,18 @@ def remove_epsilon_productions((V, T, S, P)):
 	grammar_produces_e = (S in Ve)
 	
 	# use set of nullable variables
-	new_P = [(lhs, rhs) for (lhs, rhs) in copy.copy(P) if rhs != [""]]
-	for (lhs, rhs) in P:
-		for i in range(len(rhs)):
-			if rhs[i] in Ve:
-				new_rule = (lhs, rhs[:i] + rhs[i+1:])
-				if new_rule not in new_P:
-					new_P.append(new_rule)
+	new_P = [(l,r) for (l,r) in copy.deepcopy(P) if '' not in r]
+	for (lhs, rhs) in new_P:
+		r = rhs
+		nullables = [i for i in range(len(rhs)) if rhs[i] in Ve]
+		for combo in (set(itertools.compress(nullables,mask)) for mask in itertools.product(*[[0,1]]*len(nullables))):
+			for i in reversed(sorted(combo)):
+				r = r[:i] + r[i+1:]
+			new_rule = (lhs, r)
+			if new_rule not in new_P:
+				new_P.append(new_rule)
 	
-	return (V, T, S, new_P)
+	return (V, T, S, sorted(new_P))
 
 def eliminate_left_recursion((V, T, S, P)):
 	if contains_epsilon_productions((V, T, S, P)):
