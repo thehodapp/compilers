@@ -139,6 +139,7 @@ cCode += """
 	while(true) {
 		for(int i = 0; i < sizeof(synchSet)/sizeof(*synchSet); i++) {
 			if(currTerm.type == synchSet[i]) {
+				printf("Synchronized on term \\"%s\\" (%s)\\n", currTerm.lexeme, convertConstantToString(currTerm.type));
 				return;
 			}
 		}
@@ -156,6 +157,7 @@ int match(int termtype) {
 		currTerm = nextTerminal();
 		return true;
 	}
+	printf("Failed to match %s: Current term is \\"%s\\" (%s)\\n", convertConstantToString(termtype), currTerm.lexeme, convertConstantToString(currTerm.type));
 	return false;
 }
 
