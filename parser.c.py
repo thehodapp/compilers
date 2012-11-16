@@ -103,7 +103,7 @@ for v in Vh:
 				if symb in Vh:
 					cCode += '\t\t\t\t\tconsume(%s);\n' % symb
 				elif symb in Th and symb != '':
-					cCode += '\t\t\t\t\tmatch(%s);\n' % symb
+					cCode += '\t\t\t\t\tif(!match(%s)) {synch(term); break;}\n' % symb
 			cCode += '\t\t\t\t\tbreak;\n'
 			rulesGenerated.add(tuple(pt[v][t][0]))
 	cCode += '\t\t\t\tdefault:\n'
