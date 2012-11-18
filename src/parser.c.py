@@ -9,8 +9,8 @@ cCode = """
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "p1/src/types.h"
-#include "p1/src/machines.h"
+#include "../p1/src/types.h"
+#include "../p1/src/machines.h"
 
 int depth = 0;
 typedef MachineResult Terminal;
