@@ -37,7 +37,7 @@ Terminal nextTerminal(void);
 
 Terminal currTerm;
 FILE *fSrc, *fTree, *fList;
-char sLine[90];
+char sLine[90] = {0};
 char *psLine;
 int cLine;
 int cColumn;
@@ -165,10 +165,11 @@ int main(int argc, char** argv) {
 	strcpy(sfTree + strlen(sfSrc) - 4, ".tree");
 	fTree = fopen(sfTree, "w");
 	char sfList[80];
+	strcpy(sfList, sfSrc);
 	strcpy(sfList + strlen(sfSrc) - 4, ".lst");
 	fList = fopen(sfList, "w");
 
-	cLine = 0;
+	cLine = 1;
 	cColumn = 0;
 	machinesInit("p1/data/reserved-words.txt");
 	parse();
