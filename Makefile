@@ -9,13 +9,8 @@ clean:
 	rm -f doc/report*.aux doc/report*.toc doc/report*.log doc/report*.pdf doc/report*.dvi doc/report*.out
 	rm -f tests/*.tree tests/*.lst
 
-p1:
-	cd p1
-	git pull origin master > /dev/null 2>&1
-	cd ..
-
 src/parser: src/parser.c
-	gcc -Wall -g -std=c99 src/parser.c p1/src/machines.c p1/src/types.c -o src/parser
+	gcc -Wall -g -std=c99 src/parser.c src/machines.c src/types.c -o src/parser
 	chmod +x src/parser
 
 src/parser.c: src/parser.c.py src/firstfollow.py src/massage.py src/rules.py src/table.py
