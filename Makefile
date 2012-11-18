@@ -2,7 +2,7 @@ all: src/parser
 
 clean:
 	rm -f src/*.pyc
-	rm -f src/parser src/parser.c
+	rm -f src/parser src/gen.c
 	rm -f src/parser
 	rm -f doc/grammar/*.tex
 	if [ -e doc/grammar -a ! "$(ls -A doc/grammar )" ]; then rmdir doc/grammar; fi
@@ -13,8 +13,8 @@ src/parser: src/parser.c
 	gcc -Wall -g -std=c99 src/parser.c src/machines.c src/types.c -o src/parser
 	chmod +x src/parser
 
-src/parser.c: src/parser.c.py src/firstfollow.py src/massage.py src/rules.py src/table.py
-	python src/parser.c.py > src/parser.c
+src/gen.c: src/parser.c.py src/firstfollow.py src/massage.py src/rules.py src/table.py
+	python src/parser.c.py > src/gen.c
 
 doc: doc/report.pdf doc/report2.pdf
 
