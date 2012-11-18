@@ -1,0 +1,210 @@
+\documentclass[titlepage]{article}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{graphics}
+\usepackage[colorlinks=true]{hyperref}
+\usepackage[a4paper]{geometry}
+
+\newcommand{\deriv}{\overset{*}{\Rightarrow}}
+\newcommand{\ep}{\epsilon}
+
+\setcounter{secnumdepth}{-1}
+% settings for code listings
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+ 
+\lstset{ %
+  language=C,                % the language of the code
+  basicstyle=\footnotesize\ttfamily,           % the size of the fonts that are used for the code
+  numbers=left,                   % where to put the line-numbers
+  numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
+  stepnumber=1,                   % the step between two line-numbers. If it's 1, each line 
+                                  % will be numbered
+  numbersep=5pt,                  % how far the line-numbers are from the code
+  backgroundcolor=\color{white},      % choose the background color. You must add \usepackage{color}
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores
+  %frame=single,                   % adds a frame around the code
+  rulecolor=\color{black},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. commens (green here))
+  tabsize=2,                      % sets default tabsize to 2 spaces
+%  captionpos=t,                   % sets the caption-position to top
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=true,        % sets if automatic breaks should only happen at whitespace
+%  title=\lstname,                   % show the filename of files included with \lstinputlisting;
+                                  % also try caption instead of title
+  keywordstyle=\color{blue},          % keyword style
+  commentstyle=\color{dkgreen},       % comment style
+  stringstyle=\color{gray},         % string literal style
+  escapeinside={\%*}{*)},            % if you want to add a comment within your code
+  morekeywords={*,...}               % if you want to add more keywords to the set
+}
+
+\author{Christian Mann}
+\title{Compiler Construction \\ Project 2}
+\date{\today}
+
+\begin{document}
+	\maketitle
+	\tableofcontents
+
+	\section{Introduction}
+	This is the second phase of the front-end of a compiler for a limited subset of the Pascal language.
+	
+	This phase involves the implementation of the Syntax Analyzer. The analyzer employs recursive descent parsing based on an LL(1) grammar and processes the tokens obtained by invoking the lexical analyzer developed in Project 1.
+
+	In addition to identifying and reporting syntax errors (via the listing file) and suggesting the appropriate corrections, the syntax analyzer also implements error recovery using synchronizing tokens.
+	\section{Methodology}
+		\subsection{Grammar Transformations}
+		To build an LL(1) recursive descent parser, it is necessary to first convert the grammar to LL(1) form. This is accomplished by performing the following grammar transformations:
+		\begin{enumerate}
+			\item Removal of ambiguity
+			\item Elimination of nullable productions
+			\item Elimination of immediate and deep left recursion
+			\item Left factoring
+		\end{enumerate}
+		All of these processes will be explained later in the report.
+		\subsection{Parse Table}
+		After transforming the grammar to LL(1) form, it is possible to compute the First and Follow sets for each nonterminal, so that the parse table can be constructed. Given the parse table it is possible to parse any given string in linear time, implementing the Viable Prefix Property.
+	\section{Implementation}
+
+		\subsection{Preliminaries}
+		To start, the grammar was transcribed into a digital form, in the form of a Python data structure. The essential data structure is a list of $(\alpha, \beta)$ tuples, where $\alpha$ is a string and $\beta$ is a list of strings.
+
+		Throughout this section, $V$ will refer to the set of variables, $T$ will refer to the set of terminals, $S$ will refer to the start (top-level) variable, and $P$ will refer to the set of productions.
+
+		\subsection{Ambiguity}
+		The language we were given was not inherently ambiguous, but the grammar was ambiguous, exhibiting the dangling else ambiguity:
+		\[ <statement> \rightarrow if <expression> then <statement> else <statement> | if <expression> then <statement> \]
+		Since this was the only ambiguity in the language, we simply chose to deal with it after construction of the parse table.
+
+		\subsection{Nullable Productions}
+		\emph{This transformation is only necessary if the grammar exhibits left recursion, immediate or deep.}
+
+		To perform this transformation, it is first necessary to identify the variables that are nullable (i.e. $V_\ep = {v \in V: v \deriv \ep}$). This is accomplished with a flood-fill algorithm.
+
+		Once the set of nullable variables has been identified, the algorithm proceeds:
+		\begin{enumerate}
+			\item $P = P \ {(\alpha, \beta) : \beta == \ep}$
+			\item For each $(\alpha, \beta) \in P$:
+			\item If there are any variables in $\beta$ that are in $V_\ep$, then add a new rule to $P$ with that variable at that spot removed.
+			\item Repeat these steps until the grammar does not change on an iteration.
+		\end{enumerate}
+
+		\subsection{Removal of Left Recursion}
+		$v \in V$ exhibits immediate left recursion if:
+			\[ v \rightarrow v\gamma \]
+		$v \in V$ exhibits deep left recursion if:
+			\[ v \deriv w\sigma \deriv v\gamma \]
+
+		The grammar does not exhibit deep left recursion, so we will not discuss its algorithm for removal.
+
+		Elimination of immediate left recursion follows the form:
+			\[ v \rightarrow v\alpha | \beta \]
+		becomes
+			\begin{align}
+				v  &\rightarrow \beta v' \\
+				v' &\rightarrow \alpha v'
+			\end{align}
+		This rule is applied for each variable.
+
+		This is fairly straightforward to implement; the only tricky bit is creating $v'$ from $v$ while maintaining uniqueness. This is obtained by repeatedly appending a ``shiv'' (such as an underscore) to the variable until a new name (one that is not contained within $V$) is obtained.
+		
+		\subsection{Left Factoring}
+		Left factoring is the following substitution:
+			\[ v \rightarrow \alpha\beta | \alpha\gamma \]
+		becomes
+			\begin{align*}
+				v  &\rightarrow v' \\
+				v' &\rightarrow \beta | \gamma
+			\end{align*}
+
+		This substitution is performed as many times as is possible.
+
+		This algorithm is also fairly straightforward. To optimize for space concerns, it is helpful to always choose the largest $\alpha$ possible.
+		
+		\subsection{First and Follow Sets}
+		Let $\$$ denote the end-of-file token.
+			\[ First(v) = \{a \in T: \alpha \deriv a\gamma\} \cup \{\ep : a \deriv \ep\} \]
+			\[ follow(v) = \{a \in T: S \deriv \sigma v a \gamma\} \cup \{\$: S \deriv \gamma v\} \]
+		These are computed using, once again, a step repeated until no changes occur:
+		\begin{enumerate}
+			\item $x \in T \implies First(x) = \{x\}$
+			\item $x \rightarrow \ep \implies \ep \in First(x)$
+			\item $v \rightarrow y_1\gamma \implies (First(y_1) - \{\ep\}) \subseteq First(v)$
+			\item $v \rightarrow y_1y_2\gamma \land \ep \in First(y_1) \implies First(y_2)-\{\ep\} \subseteq First(v)$
+			\item The above step can be extended to the length of $\beta$.
+			\item $v \rightarrow y_1y_2...y_n \land (\forall y_i)(\ep \in First(y_i)) \implies \ep \in First(v)$
+		\end{enumerate}
+
+		Computation of the follow set goes:
+		\begin{enumerate}
+			\item $\$ \in follow(S)$
+			\item $A \rightarrow aBy_1\gamma \implies First(y_1) - \{\ep\} \subseteq follow(B)$
+			\item $A \rightarrow aBy_1y_2\gamma \land \ep \in First(y_1) \implies First(y_2) - \ep \subseteq follow(B)$
+			\item The above step can be extended to the length of $\beta$.
+			\item $v \rightarrow y_1y_2...y_n \land (\forall y_i)(\ep \in First(y_i)) \implies follow(v) \subseteq follow(v)$
+		\end{enumerate}
+		Again, the steps are repeated until no changes are made.
+		
+		\subsection{Parse Table Construction}
+		The parse table is a two-dimensional table $M$, indexed on variables ($V$) and terminals ($T$).
+
+		Given the first and follow sets, the construction of the parse table is as follows:
+		\begin{enumerate}
+			\item $A \rightarrow B \land c \in First(B) \implies M[A][c] = B$
+			\item $A \rightarrow \ep \land c \in follow(A) \implies M[A][c] = \ep$
+		\end{enumerate}
+
+		For an unambiguous LL(1) grammar, the above relationship is consistent. All empty spaces are syntax errors.
+
+			\subsubsection{Dangling Else Ambiguity}
+			Our grammar is ambiguous, as described above. This is exhibited in the parse table -- there are two valid definitions for $M[statement'][\textrm{else}]$:
+			\begin{align*}
+				M[statement'][\textrm{else}] &= \ep \\
+				M[statement'][\textrm{else}] &= \textrm{else} <statement>
+			\end{align*}
+			We chose to simply special-case this ambiguity by selecting the second definition for this project. As a consequence, \texttt{else} clauses bind to the closest (latest) \texttt{if} clause.
+
+		\subsection{Recursive Descent Parser}
+		Construction of the recursive descent parser is simple, given the infrastructure of Project 1 (the lexical analyzer and tokenizer). A global variable \texttt{currTerm} is maintained, that is the next terminal to be parsed; i.e. the next one in the stream.
+
+		Parsing a nonterminal is quite easy. To parse a nonterminal $A$, for instance, look up $M[A][\texttt{currTerm}]$, and parse (or match) each item in the list in turn. If this is an empty space ( \textit{not} the empty string, but rather a spot that is undefined), then the parser enters \textit{synchronization mode}
+
+		To match a terminal type, the type is compared with the type of the current terminal. If they match, then a new terminal is obtained. If they do not match, then the parser enters \textit{synchronization mode} (more on that later).
+
+		The function \texttt{consume(NonTerminal nt)} implements this functionality using a large switch-case statement for \texttt{nt}, each with switch-case statements for \texttt{currTerm}. The parse table is embedded in the file itself; there is no exterior storage mechanism. This will be helpful in future projects, which will require code insertions in between these steps.
+
+		For now, deduplication is performed on the inner level, using C's case fallthrough. This reduces the amount of generated code by a large factor.
+
+		\subsection{Synchronization Mode}
+		When the parser encounters an error, such as an undefined parse table entry or a denied match request, it attempts to recover after printing an appropriate error message to the screen.
+
+		The parser employs \textit{panic-mode} recovery, a simple technique that simply bails out of the current nonterminal, looking for a safe symbol at which to resume parsing. We place all of the symbols in $follow(A)$ into $synch(A)$, in addition to $\$$.
+
+	\section{Discussion and Conclusions}
+		\subsection{Testing}
+		Unit testing was very important to ensure the correctness of the program. To that end, programs were written that rigorously tested each machine on edge and corner cases, for both valid and erroneous inputs. In addition, many sample Pascal programs were written and the program as a whole was verified to work correctly.
+
+	\begin{thebibliography}{9}
+		\bibitem{Textbook}
+			Aho, Sethi, and Ullman.
+			\emph{Compilers: Principles, Techniques, and Tools}.
+			1st ed.
+			Pearson Education, Inc: 2006. Print.
+	\end{thebibliography}
+	\appendix
+	\section{Grammar Transformations}
+	%\subsection{Initial}
+	%\input{doc/grammar/initial.tex}
+	%\subsection{Null Productions Removed}
+	%\input{doc/grammar/nonull.tex}
+	%\subsection{Left Recursion Removed}
+	%\input{doc/grammar/noleftrec.tex}
+	%\subsection{Left Factoring Removed}
+	%\input{doc/grammar/final.tex}
+	\section{Sample Inputs and Outputs}
+	\section{Program Listings}
+\end{document}
