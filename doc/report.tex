@@ -77,7 +77,10 @@
 
 		\subsection{Ambiguity}
 		The language we were given was not inherently ambiguous, but the grammar was ambiguous, exhibiting the dangling else ambiguity:
-		\[ <statement> \rightarrow if <expression> then <statement> else <statement> | if <expression> then <statement> \]
+		\begin{align*}
+			<statement> &\rightarrow \textrm{if} <expression> \textrm{then} <statement> \textrm{else} <statement> \\
+			<statement> &\rightarrow \textrm{if} <expression> \textrm{then} <statement>
+		\end{align*}
 		Since this was the only ambiguity in the language, we simply chose to deal with it after construction of the parse table.
 
 		\subsection{Nullable Productions}
@@ -87,7 +90,7 @@
 
 		Once the set of nullable variables has been identified, the algorithm proceeds:
 		\begin{enumerate}
-			\item $P = P \ {(\alpha, \beta) : \beta == \ep}$
+			\item $P = P \ {(\alpha, \beta) : \beta = \ep}$
 			\item For each $(\alpha, \beta) \in P$:
 			\item If there are any variables in $\beta$ that are in $V_\ep$, then add a new rule to $P$ with that variable at that spot removed.
 			\item Repeat these steps until the grammar does not change on an iteration.
@@ -104,10 +107,10 @@
 		Elimination of immediate left recursion follows the form:
 			\[ v \rightarrow v\alpha | \beta \]
 		becomes
-			\begin{align}
+			\begin{align*}
 				v  &\rightarrow \beta v' \\
 				v' &\rightarrow \alpha v'
-			\end{align}
+			\end{align*}
 		This rule is applied for each variable.
 
 		This is fairly straightforward to implement; the only tricky bit is creating $v'$ from $v$ while maintaining uniqueness. This is obtained by repeatedly appending a ``shiv'' (such as an underscore) to the variable until a new name (one that is not contained within $V$) is obtained.
@@ -186,7 +189,7 @@
 
 	\section{Discussion and Conclusions}
 		\subsection{Testing}
-		Unit testing was very important to ensure the correctness of the program. To that end, programs were written that rigorously tested each machine on edge and corner cases, for both valid and erroneous inputs. In addition, many sample Pascal programs were written and the program as a whole was verified to work correctly.
+		Unit testing was very important to ensure the correctness of the program. To that end, programs were written that rigorously tested each production on edge and corner cases, for both valid and erroneous inputs. In addition, many sample Pascal programs were written and the program as a whole was verified to work correctly.
 
 	\begin{thebibliography}{9}
 		\bibitem{Textbook}
@@ -197,14 +200,45 @@
 	\end{thebibliography}
 	\appendix
 	\section{Grammar Transformations}
-	%\subsection{Initial}
-	%\input{doc/grammar/initial.tex}
-	%\subsection{Null Productions Removed}
-	%\input{doc/grammar/nonull.tex}
-	%\subsection{Left Recursion Removed}
-	%\input{doc/grammar/noleftrec.tex}
-	%\subsection{Left Factoring Removed}
-	%\input{doc/grammar/final.tex}
+		\subsection{Initial}
+		\input{grammar/initial.tex}
+		\subsection{Left Recursion Removed}
+		\input{grammar/recursion.tex}
+		\subsection{Left Factoring Performed}
+		\input{grammar/factoring.tex}
 	\section{Sample Inputs and Outputs}
+		\subsection{Minimal Example}
+			\begin{minipage}[t]{0.5\textwidth}
+				\subsubsection{Pascal Code}
+				\lstinputlisting[language=Pascal]{../tests/minimal.pas}
+			\end{minipage}
+			\begin{minipage}[t]{0.5\textwidth}
+				\subsubsection{Parse Tree}
+				\lstinputlisting{../tests/minimal.tree}
+			\end{minipage}
+		\subsection{Blank File (Invalid)}
+			\begin{minipage}[t]{0.5\textwidth}
+				\subsubsection{Pascal Code}
+				\lstinputlisting[language=Pascal]{../tests/blank.pas}
+			\end{minipage}
+			\begin{minipage}[t]{0.5\textwidth}
+				\subsubsection{Listing File}
+				\lstinputlisting{../tests/blank.lst}
+			\end{minipage}
 	\section{Program Listings}
+		\ifdefined\includePython
+		\subsection{C code (generated)}
+			\subsubsection{parser.c}
+			\lstinputlisting[language=C]{../parser.c}
+		\subsection{Python code}
+			\subsubsection{massage.py}
+			\lstinputlisting[language=Python]{../massage.py}
+			\subsubsection{firstfollow.py}
+			\lstinputlisting[language=Python]{../firstfollow.py}
+			\subsubsection{table.py}
+			\lstinputlisting[language=Python]{../table.py}
+		\else
+		\subsection{parser.c}
+		\lstinputlisting[language=C]{../parser.c}
+		\fi
 \end{document}
