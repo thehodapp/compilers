@@ -77,11 +77,16 @@
 
 		\subsection{Ambiguity}
 		The language we were given was not inherently ambiguous, but the grammar was ambiguous, exhibiting the dangling else ambiguity:
-		\begin{align*}
-			<statement> &\rightarrow \textrm{if} <expression> \textrm{then} <statement> \textrm{else} <statement> \\
-			<statement> &\rightarrow \textrm{if} <expression> \textrm{then} <statement>
-		\end{align*}
-		Since this was the only ambiguity in the language, we simply chose to deal with it after construction of the parse table.
+
+		\begin{center}
+		\parbox{10cm}{
+			\textit{statement} \\
+			\phantom{1in} $\rightarrow$ \textbf{if} \textit{expression} \textbf{then} \textit{statement} \textbf{else} \textit{statement} \\
+			\phantom{1in} $\rightarrow$ \textbf{if} \textit{expression} \textbf{then} \textit{statement}
+		}
+		\end{center}
+
+		\noindent Since this was the only ambiguity in the language, we simply chose to deal with it after construction of the parse table.
 
 		\subsection{Nullable Productions}
 		\emph{This transformation is only necessary if the grammar exhibits left recursion, immediate or deep.}
@@ -166,8 +171,8 @@
 			\subsubsection{Dangling Else Ambiguity}
 			Our grammar is ambiguous, as described above. This is exhibited in the parse table -- there are two valid definitions for $M[statement'][\textrm{else}]$:
 			\begin{align*}
-				M[statement'][\textrm{else}] &= \ep \\
-				M[statement'][\textrm{else}] &= \textrm{else} <statement>
+				M[statement'][\textbf{else}] &= \ep \\
+				M[statement'][\textbf{else}] &= \textbf{else}\,statement
 			\end{align*}
 			We chose to simply special-case this ambiguity by selecting the second definition for this project. As a consequence, \texttt{else} clauses bind to the closest (latest) \texttt{if} clause.
 
@@ -199,6 +204,7 @@
 			Pearson Education, Inc: 2006. Print.
 	\end{thebibliography}
 	\appendix
+	\pagebreak
 	\section{Grammar Transformations}
 		\subsection{Initial}
 		\input{grammar/initial.tex}
@@ -206,6 +212,7 @@
 		\input{grammar/recursion.tex}
 		\subsection{Left Factoring Performed}
 		\input{grammar/factoring.tex}
+	\pagebreak
 	\section{Sample Inputs and Outputs}
 		\subsection{Minimal Example}
 			\begin{minipage}[t]{0.5\textwidth}
@@ -225,6 +232,7 @@
 				\subsubsection{Listing File}
 				\lstinputlisting{../tests/blank.lst}
 			\end{minipage}
+	\pagebreak
 	\section{Program Listings}
 		\ifdefined\includePython
 		\subsection{C code (generated)}

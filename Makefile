@@ -5,6 +5,7 @@ clean:
 	rm -f src/parser src/parser.c
 	rm -f src/parser
 	rm -f doc/grammar/*.tex
+	if [ -e doc/grammar -a ! "$(ls -A doc/grammar )" ]; then rmdir doc/grammar; fi
 	rm -f doc/report*.aux doc/report*.toc doc/report*.log doc/report*.pdf doc/report*.dvi doc/report*.out
 	rm -f tests/*.tree tests/*.lst
 
@@ -30,12 +31,14 @@ doc/report2.pdf: doc/report.tex doc/grammar/initial.tex doc/grammar/recursion.te
 	cd doc; cp report.tex report2.tex; pdflatex "\def\includePython{}\input{report2.tex}"; rm report2.tex; cd ..;
 	cd doc; cp report.tex report2.tex; pdflatex "\def\includePython{}\input{report2.tex}"; rm report2.tex; cd ..;
 
-doc/grammar/initial.tex: src/grammarToLatex.py
+doc/grammar/initial.tex: src/grammarToLatex.py doc/grammar
 	python src/grammarToLatex.py --initial doc/grammar/initial.tex
-doc/grammar/recursion.tex: src/grammarToLatex.py
+doc/grammar/recursion.tex: src/grammarToLatex.py doc/grammar
 	python src/grammarToLatex.py --recursion doc/grammar/recursion.tex
-doc/grammar/factoring.tex: src/grammarToLatex.py
+doc/grammar/factoring.tex: src/grammarToLatex.py doc/grammar
 	python src/grammarToLatex.py --factoring doc/grammar/factoring.tex
+doc/grammar:
+	mkdir -p doc/grammar
 
 tests/minimal.tree: tests/minimal.pas src/parser
 	src/parser tests/minimal.pas

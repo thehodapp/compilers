@@ -17,15 +17,15 @@ typedef MachineResult Terminal;
 typedef enum {
 """
 for v in Vh:
-	cCode += "\t%s," % v
+	cCode += "\t%s,\n" % v
 cCode += """} NonTerminal;
 
 char* ntToString(NonTerminal nt) {
 	switch(nt) {
 """
 for v in Vh:
-	cCode += "case %s: return \"%s\"; " % (v,v)
-cCode += """}
+	cCode += "\t\tcase %s: return \"%s\";\n" % (v,v)
+cCode += """\t}
 }
 void parse(void);
 void consume(NonTerminal);
