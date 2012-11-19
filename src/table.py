@@ -36,6 +36,6 @@ for v in Vh:
 	for t in Th:
 		if pt[v] and pt[l][t]:
 			if len(pt[v][t]) > 1:
-				print 'WTF'
-				print v, t, pt[v][t]
+				sys.stderr.write('WTF')
+				sys.stderr.write(' '.join([v, t, pt[v][t]]))
 				sys.exit()

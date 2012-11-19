@@ -17,8 +17,8 @@ def printSym(tnt):
 	elif tnt[0] == 'T':
 		return printTerm(tnt)
 	else:
-		print "Danger danger Will Robinson"
-		print tnt
+		sys.stderr.write("Danger danger Will Robinson\n")
+		sys.stderr.write(tnt + "\n")
 		sys.exit(0)
 def printTerm(t):
 	return '\\textbf{%s}' % {
