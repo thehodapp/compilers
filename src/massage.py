@@ -3,7 +3,7 @@ import copy
 import itertools
 
 LEFT_RECURSION_SHIV = '_'
-LEFT_FACTORING_SHIV = '1'
+LEFT_FACTORING_SHIV = '_'
 
 def remove_epsilon_productions((V, T, S, P)):
 	#identify set of nullable variables

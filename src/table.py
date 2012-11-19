@@ -26,7 +26,7 @@ for (l,r) in Ph:
 			pt[l][symb].append(r)
 		else:
 			for symb in fol[l]:
-				if l == 'NT_STATEMENT1' and symb == 'T_ELSE':
+				if l == 'NT_STATEMENT'+LEFT_FACTORING_SHIV and symb == 'T_ELSE':
 					# special-case: dangling else ambiguity
 					pass
 				else:
