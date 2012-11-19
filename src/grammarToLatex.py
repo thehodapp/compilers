@@ -73,7 +73,7 @@ def printGrammar(P):
 			lastVar = l
 			return ("%s \\\\" % printVar(l)) + printProd((l,r))
 		else:
-			return "\\phantom{1in} $\\rightarrow$ %s" % (' '.join(printSym(t) for t in r))
+			return "\\phantom{1in} $\\rightarrow$ %s" % ('~'.join(printSym(t) for t in r))
 	return ' \\\\ \n'.join(printProd(p) for p in P)
 
 from rules import *
