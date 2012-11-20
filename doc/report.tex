@@ -95,7 +95,7 @@
 
 		Once the set of nullable variables has been identified, the algorithm proceeds:
 		\begin{enumerate}
-			\item $P = P \ {(\alpha, \beta) : \beta = \ep}$
+			\item $P = P - \{(\alpha, \beta) : \beta = \ep\}$
 			\item For each $(\alpha, \beta) \in P$:
 			\item If there are any variables in $\beta$ that are in $V_\ep$, then add a new rule to $P$ with that variable at that spot removed.
 			\item Repeat these steps until the grammar does not change on an iteration.
