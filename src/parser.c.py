@@ -42,6 +42,8 @@ char *psLine;
 int cLine;
 int cColumn;
 
+int retCode = 0;
+
 void parse() {
 """
 cCode += "\tNonTerminal top_nonterminal = %s;" % Sh
@@ -154,6 +156,8 @@ void synerr(int *expected, int expLen, Terminal encountered) {
 		fprintf(stderr, "%s, ", convertConstantToString(expected[i]));
 	}
 	fprintf(stderr, "%s\\n", convertConstantToString(expected[expLen-1]));
+
+	retCode |= 2;
 }
 
 int main(int argc, char** argv) {
@@ -175,7 +179,7 @@ int main(int argc, char** argv) {
 	parse();
 	fclose(fSrc);
 	fclose(fTree);
-	return 0;
+	return retCode;
 }
 
 Terminal nextTerminal() {
@@ -206,7 +210,9 @@ Terminal nextTerminal() {
 
 void lexerr(Terminal res) {
 	fprintf(fList, "%s, column %d\\n", convertConstantToString(res.error), cColumn);
-	fprintf(stderr, "%s, line %d, column %d\\n", convertConstantToString(res.error), cColumn, cLine);
+	fprintf(stderr, "%s, line %d, column %d\\n", convertConstantToString(res.error), cLine, cColumn);
+
+	retCode |= 4;
 }
 """
 print cCode
