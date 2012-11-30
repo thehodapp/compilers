@@ -1,5 +1,4 @@
 from rules import *
-from collections import defaultdict
 import sys
 import random
 import textwrap
