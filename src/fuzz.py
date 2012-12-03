@@ -1,6 +1,8 @@
 from rules import *
 import sys
 import random
+import re
+import string
 import textwrap
 import rstr
 
@@ -32,12 +34,18 @@ rwords = [
 	'or',
 ]
 
-def genID():
-	att = rstr.xeger(r'[a-zA-Z][a-zA-Z0-9]{1,9}')
-	if att in rwords:
-		return genID()
-	else:
-		return att
+try:
+	with open('/usr/share/dict/american-english') as f:
+		words = list(set(line.strip() for line in f if all(c in string.ascii_letters for c in line.strip()) and len(line.strip()) <= 10) - set(rwords))
+		def genID():
+			return random.choice(words)
+except IOError:
+	def genID():
+		att = rstr.xeger(r'[a-zA-Z][a-zA-Z0-9]{0,9}')
+		if att in rwords:
+			return genID()
+		else:
+			return att
 
 patterns = {
 	"T_PROGRAM": lambda: rstr.xeger(r'program'),
@@ -84,7 +92,7 @@ bannedRules = [
 
 def translate(pgm):
 	if pgm in T:
-		return patterns[pgm]()
+		return str(patterns[pgm]())
 	else:
 		return [translate(l) for l in pgm]
 
@@ -105,4 +113,7 @@ while not all(sym in T for sym in pgm):
 				rhs = random.choice(rhss)
 			newPgm.extend(rhs)
 	pgm = newPgm
-print textwrap.fill(' '.join(filter(lambda a: a, translate(pgm))))
+try:
+	print textwrap.fill(' '.join(filter(lambda a: a, translate(pgm))))
+except UnicodeDecodeError as e:
+	print translate(pgm), e
