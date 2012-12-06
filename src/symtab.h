@@ -5,12 +5,16 @@ typedef struct {
 	char *word;
 } SymbolTableEntry;
 
-typedef struct symbtab {
+typedef struct symtab {
 	SymbolTableEntry* entry;
-	struct symbtab* parent;
-	struct symbtab* child;
-	struct symbtab* prev;
-	struct symbtab* next;
+	struct symtab* parent;
+	struct symtab* lchild;
+	struct symtab* prev;
+	struct symtab* next;
 } SymbolTable;
 
+SymbolTableEntry* checkSymbolTable(char*);
+void addVariable(char*);
+void enterProcedure(char*);
+void exitProcedure(void);
 #endif
