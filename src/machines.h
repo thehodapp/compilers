@@ -1,4 +1,7 @@
+#ifndef MACHINES_H
+#define MACHINES_H
 #include "types.h"
+#include "symtab.h"
 
 typedef struct {
 	char* lexeme;
@@ -13,16 +16,8 @@ typedef struct {
 } MachineResult;
 
 
-typedef struct {
-	char* word;
-} SymbolTableEntry;
-
-typedef struct symbtab {
-	SymbolTableEntry* entry;
-	struct symbtab* next;
-} SymbolTable;
-
-SymbolTable *tab;
 void machinesInit(char*);
 MachineResult identifyToken(char* str);
 typedef MachineResult (*Machine)(char*);
+
+#endif

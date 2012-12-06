@@ -2,6 +2,7 @@
 #include<string.h>
 #include "machines.h"
 #include "types.h"
+#include "symtab.h"
 
 ReservedWordList *rwl;
 
@@ -78,27 +79,6 @@ ReservedWord* CheckReservedWords(char* word) {
 		}
 	}
 	return NULL;
-}
-
-SymbolTableEntry* checkSymbolTable(char* word) {
-	SymbolTable* pTab = tab;
-	while(pTab->entry) {
-		if(!strcmp(word, pTab->entry->word)) {
-			//found it
-			return pTab->entry;
-		} else {
-			//go to next link
-			if(!pTab->next) {
-				//make new link
-				pTab->next = malloc(sizeof(SymbolTable));
-			}
-			pTab = pTab->next;
-		}
-	}
-	pTab->entry = malloc(sizeof(SymbolTableEntry));
-	pTab->entry->word = malloc(strlen(word)+1);
-	strcpy(pTab->entry->word, word);
-	return pTab->entry;
 }
 
 MachineResult RELOP(char* str) {
@@ -481,9 +461,6 @@ MachineResult CATCHALL(char* str) {
 }
 
 void machinesInit(char* sfReservedWords) {
-	tab = malloc(sizeof(SymbolTable));
-	tab->entry = NULL;
-
 	FILE *fReservedWords = fopen(sfReservedWords, "r");
 	if(fReservedWords) {
 		rwl = parseResWordFile(fReservedWords);
