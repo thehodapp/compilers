@@ -4,6 +4,8 @@
 #include<stdbool.h>
 #include "symtab.h"
 
+extern void semerr(char*);
+
 void initTable(char*);
 SymbolTable* createNode(char*);
 void printTable(SymbolTable*, int);
@@ -12,27 +14,32 @@ SymbolTable *root;
 SymbolTable *frontier;
 bool shouldTurn;
 
-void initTable(char* word) {
-	root = frontier = createNode(word);
+void initTable(char* word, Type type) {
+	root = frontier = createNode(word, type);
 	shouldTurn = true;
 }
 
-SymbolTable* createNode(char* word) {
+SymbolTable* createNode(char* word, Type type) {
 	SymbolTable* new = malloc(sizeof(SymbolTable));
 	new->entry = malloc(sizeof(SymbolTableEntry));
+
+	new->entry->type = type;
 	new->entry->word = malloc(strlen(word)*sizeof(char));
 	strcpy(new->entry->word, word);
 	return new;
 }
 
-SymbolTableEntry* checkSymbolTable(char* word) {
+SymbolTableEntry* checkSymbolTable(char* word, bool local) {
 	if(!frontier) return NULL;
 
+	SymbolTable *limit;
+	if(local && shouldTurn) limit = frontier;
+	else if(local && frontier->parent) limit = frontier->parent;
+	else limit = root;
+
+
 	SymbolTable* pTab = frontier;
-	while(true) {
-		if(!pTab->entry) {
-			return NULL;
-		}
+	while(pTab && pTab != limit) {
 		if(!strcmp(word, pTab->entry->word)) {
 			return pTab->entry;
 		}
@@ -40,15 +47,16 @@ SymbolTableEntry* checkSymbolTable(char* word) {
 			pTab = pTab->prev;
 		} else if(pTab->parent) {
 			pTab = pTab->parent;
-		} else break;
+		}
 	}
 	return NULL;
 }
 
-void addVariable(char* word) {
+void addVariable(char* word, Type type) {
 	if(!frontier) fprintf(stderr, "Adding variable before entering procedure!\n");
+	if(checkSymbolTable(word, true)) semerr("Duplicate variable names.");
 
-	SymbolTable* new = createNode(word);
+	SymbolTable* new = createNode(word, type);
 
 	if(shouldTurn) {
 		new->parent = frontier;
@@ -63,12 +71,13 @@ void addVariable(char* word) {
 	frontier = new;
 }
 
-void enterProcedure(char* word) {
+void enterProcedure(char* word, Type type) {
+	if(checkSymbolTable(word, false)) semerr("Duplicate procedure names.");
 	if(!frontier) {
 		initTable(word);
 	} else {
 		//add sibling
-		SymbolTable* new = createNode(word);
+		SymbolTable* new = createNode(word, type);
 		new->prev = frontier;
 		new->parent = frontier->parent;
 		frontier->next = new;

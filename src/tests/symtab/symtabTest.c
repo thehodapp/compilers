@@ -1,10 +1,11 @@
 
 #include<stdio.h>
-#include "../symtab.h"
+#include "../../symtab.h"
 
-#define p enterProcedure
-#define v addVariable
-#define up exitProcedure
+#define trace(x)
+#define p(x) trace(x); enterProcedure(x)
+#define v(x) trace(x); addVariable(x)
+#define up(x) trace("up()"); exitProcedure(x)
 extern SymbolTable *root;
 
 void printTable(SymbolTable*, int);
@@ -38,4 +39,8 @@ void printTable(SymbolTable* pTab, int depth) {
 	printf("%s\n", pTab->entry->word);
 	if(pTab->lchild) printTable(pTab->lchild, depth + 1);
 	if(pTab->next) printTable(pTab->next, depth);
+}
+
+void semerr(char* msg) {
+	fprintf(stderr, "SEMERR: %s\n", msg);
 }
