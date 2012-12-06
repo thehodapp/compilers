@@ -1,6 +1,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "types.h"
+#include "machines.h"
+
 typedef MachineResult Terminal;
 
 #define NONTERMS \
@@ -53,4 +56,5 @@ typedef enum {
 #undef X
 
 char *ntToString(NonTerminal);
+
 #endif

@@ -73,11 +73,12 @@ for v in Vh:
 				if pt[v][t] == pt[v][otherT] and otherT != t:
 					cCode += '\t\t\t\tcase %s:\n' % otherT
 					expectedVars.add(otherT)
-			for symb in pt[v][t][0]:
+			for i,symb in enumerate(pt[v][t][0]):
 				if symb in Vh:
-					cCode += '\t\t\t\t\tconsume(%s);\n' % symb
+					cCode += '\t\t\t\t\tconsume(%s, a%d);\n' % (symb, i)
 				elif symb in Th and symb != '':
-					cCode += '\t\t\t\t\tif(!match(%s, nt)) goto %s;\n' % (symb, labelName)
+					cCode += '\t\t\t\t\ta%d = match(%s, nt);\n' % (i, symb)
+					cCode += '\t\t\t\t\tif(a%d.error) goto %s;' % (i, labelName)
 					labelUsed = True
 			cCode += '\t\t\t\t\tbreak;\n'
 			rulesGenerated.add(tuple(pt[v][t][0]))
