@@ -11,6 +11,7 @@ cCode = """
 #include <string.h>
 #include "types.h"
 #include "machines.h"
+#include "item.h"
 
 int depth = 0;
 typedef MachineResult Terminal;
@@ -28,8 +29,8 @@ for v in Vh:
 cCode += """\t}
 }
 void parse(void);
-void consume(NonTerminal);
-int match(int, NonTerminal);
+void consume(NonTerminal, Item*);
+int match(int, NonTerminal, Item*);
 void synch(NonTerminal);
 void synerr(int*, int, Terminal);
 void lexerr(Terminal);
@@ -49,13 +50,19 @@ void parse() {
 cCode += "\tNonTerminal top_nonterminal = %s;" % Sh
 cCode += """
 	currTerm = nextTerminal();
-	consume(top_nonterminal);
+	Item *a0 = malloc(sizeof(Item));
+	consume(top_nonterminal, a0);
 }
 
-void consume(NonTerminal nt) {
+void consume(NonTerminal nt, Item *a0) {
 	for(int i = 0; i < depth; i++) fprintf(fTree, " ");
 	fprintf(fTree, "%s\\n", ntToString(nt));
 	depth++;
+"""
+numIntermediates = max([len(pt[v][t][0]) if pt[v][t] and pt[v][t][0] else 0 for v in V for t in T])
+for i in range(numIntermediates):
+	cCode += '\tItem *a%d = malloc(sizeof(Item));\n' % (i+1)
+cCode += """
 	switch(nt) {
 """
 for v in Vh:
@@ -75,10 +82,10 @@ for v in Vh:
 					expectedVars.add(otherT)
 			for i,symb in enumerate(pt[v][t][0]):
 				if symb in Vh:
-					cCode += '\t\t\t\t\tconsume(%s, a%d);\n' % (symb, i)
+					cCode += '\t\t\t\t\tconsume(%s, a%d);\n' % (symb, i+1)
 				elif symb in Th and symb != '':
-					cCode += '\t\t\t\t\ta%d = match(%s, nt);\n' % (i, symb)
-					cCode += '\t\t\t\t\tif(a%d.error) goto %s;' % (i, labelName)
+					cCode += '\t\t\t\t\tmatch(%s, nt, a%d);' % (symb, i+1)
+					cCode += ' if(a%d->error) goto %s;\n' % (i+1, labelName)
 					labelUsed = True
 			cCode += '\t\t\t\t\tbreak;\n'
 			rulesGenerated.add(tuple(pt[v][t][0]))
@@ -131,7 +138,7 @@ cCode += """
 	}
 }
 
-int match(int termtype, NonTerminal nt) {
+int match(int termtype, NonTerminal nt, Item *a0) {
 	if(currTerm.type == termtype) {
 		for(int i = 0; i < depth; i++) fprintf(fTree, " ");
 		fprintf(fTree, "%s\\n", convertConstantToString(currTerm.type));

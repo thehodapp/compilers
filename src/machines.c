@@ -8,9 +8,8 @@
 ReservedWordList *rwl;
 
 ReservedWord* CheckReservedWords(char*);
-SymbolTableEntry* checkSymbolTable(char*);
 
-MachineResult IDRES(char* str) {
+MachineResult mach_idres(char* str) {
 	char* b = str;
 	char* f = b;
 	int state = 0;
@@ -49,9 +48,7 @@ MachineResult IDRES(char* str) {
 				res.attribute = possResWord->attribute;
 				res.validToken = 1;
 			} else {
-				SymbolTableEntry* entry = checkSymbolTable(lex);
 				res.type = T_ID;
-				res.pointer = entry;
 				res.validToken = 1;
 				if((f-str) > 10) {
 					res.error = ERR_ID_LEN;
@@ -82,7 +79,7 @@ ReservedWord* CheckReservedWords(char* word) {
 	return NULL;
 }
 
-MachineResult RELOP(char* str) {
+MachineResult mach_relop(char* str) {
 	char* f = str;
 	int state = 0;
 	MachineResult res;
@@ -141,7 +138,7 @@ MachineResult RELOP(char* str) {
 	}
 }
 
-MachineResult WS(char* str) {
+MachineResult mach_ws(char* str) {
 	char* f = str;
 	int state = 0;
 	MachineResult res;
@@ -177,7 +174,7 @@ MachineResult WS(char* str) {
 	}
 }
 
-MachineResult INT(char* str) {
+MachineResult mach_int(char* str) {
 	char* f = str;
 	int state = 0;
 	MachineResult res;
@@ -221,7 +218,7 @@ MachineResult INT(char* str) {
 	}
 }
 
-MachineResult REAL(char* str) {
+MachineResult mach_real(char* str) {
 	char* f = str;
 	int state = 0;
 	MachineResult res;
@@ -280,7 +277,7 @@ MachineResult REAL(char* str) {
 	}
 }
 
-MachineResult LONGREAL(char* str) {
+MachineResult mach_longreal(char* str) {
 	char *f = str;
 	int state = 0;
 	MachineResult res;
@@ -372,7 +369,7 @@ MachineResult LONGREAL(char* str) {
 	}
 }
 
-MachineResult ENDOFFILE(char* str) {
+MachineResult mach_endoffile(char* str) {
 	MachineResult res;
 	res.error = 0;
 	res.type = T_EOF;
@@ -387,7 +384,7 @@ MachineResult ENDOFFILE(char* str) {
 	return res;
 }
 
-MachineResult CATCHALL(char* str) {
+MachineResult mach_catchall(char* str) {
 	MachineResult res;
 	res.error = 0;
 	res.validToken = 1;
@@ -470,7 +467,7 @@ void machinesInit(char* sfReservedWords) {
 	}
 }
 
-static Machine machines[] = {&WS, &IDRES, &LONGREAL, &REAL, &INT, &RELOP, &CATCHALL, &ENDOFFILE};
+static Machine machines[] = {&mach_ws, &mach_idres, &mach_longreal, &mach_real, &mach_int, &mach_relop, &mach_catchall, &mach_endoffile};
 
 MachineResult identifyToken(char* str) {
 	int i;

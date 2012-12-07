@@ -3,6 +3,8 @@
 #define SYMTAB_H
 
 typedef enum {
+	NONE = 0,
+
 	PGNAME,
 	PGPARM,
 	PROCNAME,
@@ -18,6 +20,15 @@ typedef enum {
 	PPAINT,
 } Type;
 
+Type makeArrayType(Type);
+bool isArrayType(Type);
+Type unArrayType(Type);
+
+bool isParameterType(Type);
+Type makeParameterType(Type);
+
+char* typeToString(Type);
+
 typedef struct {
 	Type type;
 	char *word;
@@ -32,7 +43,9 @@ typedef struct symtab {
 } SymbolTable;
 
 SymbolTableEntry* checkSymbolTable(char*, bool);
-void addVariable(char*);
-void enterProcedure(char*);
+void printTable(SymbolTable*, int);
+void addVariable(char*, Type);
+void enterProcedure(char*, Type);
 void exitProcedure(void);
+SymbolTableEntry* nthParamOfProc(char*, int);
 #endif

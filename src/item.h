@@ -1,9 +1,12 @@
-
+#include "symtab.h"
 typedef struct item {
-	void *in;
-	void *value;
-	void *address;
-	void *type;
-	void *error;
-	void *code;
+	struct foo {
+		int count;
+		char* proc;
+		Type type;
+	} in;
+	char *lexeme;
+	Type type;
+	bool error;
+	bool errHere;
 } Item;
