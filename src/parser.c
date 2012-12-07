@@ -292,9 +292,14 @@ void consume(NonTerminal nt, Item *a0) {
 					a2->in.proc = a0->in.proc;
 					consume(NT_EXPRESSION_LIST_, a2);
 					
-					if(nthParamOfProc(a0->in.proc, 0) && nthParamOfProc(a0->in.proc, 0)->type != a1->type) {
+					if(!nthParamOfProc(a0->in.proc, 0)) {
+						a0->errHere = true;
+						semerr("argument count mismatch at first parameter");
+						fprintf(stderr, "Calling procedure %s\n", a0->in.proc);
+					} else if(unPP(nthParamOfProc(a0->in.proc, 0)->type) != unPP(a1->type)) {
 						a0->errHere = true;
 						semerr("type mismatch, first parameter");
+						fprintf(stderr, "parameter %d, formal type %s, received type %s\n", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
 					}
 					break;
 				default:
@@ -312,12 +317,22 @@ void consume(NonTerminal nt, Item *a0) {
 					a3->in.proc = a0->in.proc;
 					consume(NT_EXPRESSION_LIST_, a3);
 
-					if(nthParamOfProc(a0->in.proc, a0->in.count) && nthParamOfProc(a0->in.proc, a0->in.count)->type != a2->type) {
+					if(!nthParamOfProc(a0->in.proc, a0->in.count)) {
+						a0->errHere = true;
+						semerr("argument count mismatch at a parameter");
+						fprintf(stderr, "Calling procedure %s\n", a0->in.proc);
+					} else if(unPP(nthParamOfProc(a0->in.proc, a0->in.count)->type) != unPP(a2->type)) {
 						a0->errHere = true;
 						semerr("type mismatch on a parameter");
+						fprintf(stderr, "Calling procedure %s, argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(unPP(nthParamOfProc(a0->in.proc, a0->in.count)->type)), typeToString(unPP(a2->type)));
 					}
 					break;
 				case T_RPAREN:
+					if(nthParamOfProc(a0->in.proc, a0->in.count)) {
+						a0->errHere = true;
+						semerr("argument count mismatch at a parameter");
+						fprintf(stderr, "Calling procedure %s, argument %d, formal param exists; did not pass actual param\n", a0->in.proc, a0->in.count);
+					}
 					break;
 				default:
 					synerr((int[]){T_COMMA, T_RPAREN}, 2, currTerm);
@@ -343,7 +358,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NOT:
 					match(T_NOT, nt, a1); if(a1->error) goto nt_factor_synch;
 					consume(NT_FACTOR, a2);
-					if(a2->type == INT || a2->type == PPINT)
+					if(unPP(a2->type) == INT)
 						a0->type = a2->type;
 					else
 						a0->errHere = true;
@@ -378,7 +393,7 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_LBRACK, nt, a1); if(a1->error) goto nt_factor__synch;
 					consume(NT_EXPRESSION, a2);
 					match(T_RBRACK, nt, a3); if(a3->error) goto nt_factor__synch;
-					if((a2->type == INT || a2->type == PPINT) && isArrayType(a0->in.type))
+					if(unPP(a2->type) == INT && isArrayType(a0->in.type))
 						a0->type = unArrayType(a0->in.type);
 					else
 						a0->errHere = true;
@@ -880,7 +895,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 					consume(NT_FACTOR, a1);
 					consume(NT_TERM_, a2);
-					if((a1->type == INT || a1->type == PPINT) && (a2->type == INT || a2->type == PPINT))
+					if(unPP(a1->type) == INT && unPP(a2->type) == INT)
 						a0->type = INT;
 					else
 						a0->type = REAL;
@@ -909,7 +924,7 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_MULOP, nt, a1); if(a1->error) goto nt_term__synch;
 					consume(NT_FACTOR, a2);
 					consume(NT_TERM_, a3);
-					if((a2->type == INT || a2->type == PPINT) && (a3->type == INT || a3->type == PPINT))
+					if(unPP(a2->type) == INT && unPP(a3->type) == INT)
 						a0->type = INT;
 					else
 						a0->type = REAL;
@@ -932,7 +947,7 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_RBRACK, nt, a6); if(a6->error) goto nt_type_synch;
 					match(T_OF, nt, a7); if(a7->error) goto nt_type_synch;
 					consume(NT_STANDARD_TYPE, a8);
-					if((a3->type == INT || a3->type == PPINT) && (a5->type == INT || a5->type == PPINT))
+					if(unPP(a3->type) == INT && unPP(a5->type) == INT)
 						a0->type = makeArrayType(a8->type);
 					else
 						a0->errHere = true;

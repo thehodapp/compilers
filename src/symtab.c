@@ -103,8 +103,9 @@ void exitProcedure() {
 SymbolTableEntry* nthParamOfProc(char* word, int n) {
 	SymbolTable* proc = findNode(word, false);
 	SymbolTable* pParam = proc;
-	for(int i = 0; i < n; i++) {
-		pParam = pParam->next;
+	for(int i = 0; i <= n; i++) {
+		if(i) pParam = pParam->next;
+		else pParam = pParam->lchild;
 		if(!pParam || !isParameterType(pParam->entry->type))
 			return NULL;
 	}
@@ -133,6 +134,7 @@ Type makeArrayType(Type t) {
 		case INT:
 		case PPINT:
 			return AINT;
+		default: return t;
 	}
 }
 
@@ -144,6 +146,7 @@ Type unArrayType(Type t) {
 		case AINT:
 		case PPAINT:
 			return INT;
+		default: return t;
 	}
 }
 
@@ -153,14 +156,21 @@ bool isParameterType(Type t) {
 
 Type makeParameterType(Type t) {
 	switch(t) {
-		case INT:
-			return PPINT;
-		case REAL:
-			return PPREAL;
-		case AINT:
-			return PPAINT;
-		case AREAL:
-			return PPAREAL;
+		case INT: return PPINT;
+		case REAL: return PPREAL;
+		case AINT: return PPAINT;
+		case AREAL: return PPAREAL;
+		default: return t;
+	}
+}
+
+Type unParameterType(Type t) {
+	switch(t) {
+		case PPINT: return INT;
+		case PPREAL: return REAL;
+		case PPAINT: return AINT;
+		case PPAREAL: return AREAL;
+		default: return t;
 	}
 }
 

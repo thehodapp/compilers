@@ -3,20 +3,20 @@ var b: integer;
 var a: integer;
 var c: array[1..2] of real;
 var d: real;
-	procedure foo(b: integer);
-	var a: integer;
+	procedure foo(b: integer; a: integer);
 		procedure baz(b: integer);
 		begin
-			d := c[b]
+			d := c[b] + b
 		end;
 	begin
 	end;
 
-	procedure bar(a: integer);
+	procedure bar(a: integer; b: real);
 	begin
 	end;
 
 begin
 	a := b;
-	b := a
+	b := a;
+	call bar(a, c[b])
 end.

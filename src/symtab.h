@@ -26,6 +26,8 @@ Type unArrayType(Type);
 
 bool isParameterType(Type);
 Type makeParameterType(Type);
+Type unParameterType(Type);
+#define unPP unParameterType
 
 char* typeToString(Type);
 
