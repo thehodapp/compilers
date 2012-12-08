@@ -10,26 +10,25 @@ typedef enum {
 	PROCNAME,
 
 	REAL,
-	AREAL,
-	PPREAL,
-	PPAREAL,
 
 	INT,
-	AINT,
-	PPINT,
-	PPAINT,
+} StandardType;
+
+typedef struct {
+	StandardType st_type;
+	bool isArray;
+	bool isParam;
+	int low;
+	int high;
 } Type;
 
-Type makeArrayType(Type);
-bool isArrayType(Type);
-Type unArrayType(Type);
-
-bool isParameterType(Type);
+int typeSize(Type);
 Type makeParameterType(Type);
 Type unParameterType(Type);
 #define unPP unParameterType
 
 char* typeToString(Type);
+bool typeEqual(Type, Type);
 
 typedef struct {
 	Type type;
@@ -45,7 +44,7 @@ typedef struct symtab {
 } SymbolTable;
 
 SymbolTableEntry* checkSymbolTable(char*, bool);
-void printTable(SymbolTable*, int);
+void printTable(FILE*, SymbolTable*, int, int);
 void addVariable(char*, Type);
 void enterProcedure(char*, Type);
 void exitProcedure(void);

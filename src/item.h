@@ -1,3 +1,5 @@
+#ifndef ITEM_H
+#define ITEM_H
 #include "symtab.h"
 typedef struct item {
 	struct foo {
@@ -5,8 +7,10 @@ typedef struct item {
 		char* proc;
 		Type type;
 	} in;
-	char *lexeme;
+	
 	Type type;
+	char *lexeme;
 	bool error;
 	bool errHere;
 } Item;
+#endif

@@ -7,6 +7,11 @@
 #include "machines.h"
 #include "item.h"
 
+#define RET_TYPERR 16
+#define RET_SYNERR  2
+#define RET_LEXERR  4
+#define RET_SEMERR  8
+
 extern SymbolTable* root;
 int depth = 0;
 typedef MachineResult Terminal;
@@ -109,7 +114,7 @@ void semerr(char*);
 Terminal nextTerminal(void);
 
 Terminal currTerm;
-FILE *fSrc, *fTree, *fList;
+FILE *fSrc, *fTree, *fList, *fTable;
 char sLine[90] = {0};
 char *psLine;
 int cLine;
@@ -123,10 +128,11 @@ void parse() {
 	Item *a0 = malloc(sizeof(Item));
 	consume(top_nonterminal, a0);
 
-	printf("%d\n", a0->error);
+	if(a0->error) {
+		fprintf(stderr, "Type errors encountered.\n");
+	}
 
-	puts("\n----------table---------");
-	printTable(root, 0);
+	printTable(fTable, root, 0, 0);
 }
 
 void consume(NonTerminal nt, Item *a0) {
@@ -265,8 +271,8 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_RELOP, nt, a1); if(a1->error) goto nt_expression__synch;
 					consume(NT_SIMPLE_EXPRESSION, a2);
 
-					if(a2->type == a0->in.type)
-						a0->type = INT;
+					if(typeEqual(a2->type, a0->in.type))
+						a0->type.st_type = INT;
 					else {
 						a0->errHere = true;
 						semerr("type mismatch");
@@ -295,8 +301,7 @@ void consume(NonTerminal nt, Item *a0) {
 					if(!nthParamOfProc(a0->in.proc, 0)) {
 						a0->errHere = true;
 						semerr("argument count mismatch at first parameter");
-						fprintf(stderr, "Calling procedure %s\n", a0->in.proc);
-					} else if(unPP(nthParamOfProc(a0->in.proc, 0)->type) != unPP(a1->type)) {
+					} else if(nthParamOfProc(a0->in.proc, 0)->type.st_type != a1->type.st_type) {
 						a0->errHere = true;
 						semerr("type mismatch, first parameter");
 						fprintf(stderr, "parameter %d, formal type %s, received type %s\n", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
@@ -321,10 +326,10 @@ void consume(NonTerminal nt, Item *a0) {
 						a0->errHere = true;
 						semerr("argument count mismatch at a parameter");
 						fprintf(stderr, "Calling procedure %s\n", a0->in.proc);
-					} else if(unPP(nthParamOfProc(a0->in.proc, a0->in.count)->type) != unPP(a2->type)) {
+					} else if(nthParamOfProc(a0->in.proc, a0->in.count)->type.st_type != a2->type.st_type) {
 						a0->errHere = true;
 						semerr("type mismatch on a parameter");
-						fprintf(stderr, "Calling procedure %s, argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(unPP(nthParamOfProc(a0->in.proc, a0->in.count)->type)), typeToString(unPP(a2->type)));
+						fprintf(stderr, "Calling procedure %s, argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a2->type));
 					}
 					break;
 				case T_RPAREN:
@@ -358,7 +363,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NOT:
 					match(T_NOT, nt, a1); if(a1->error) goto nt_factor_synch;
 					consume(NT_FACTOR, a2);
-					if(unPP(a2->type) == INT)
+					if(a2->type.st_type == INT)
 						a0->type = a2->type;
 					else
 						a0->errHere = true;
@@ -393,9 +398,10 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_LBRACK, nt, a1); if(a1->error) goto nt_factor__synch;
 					consume(NT_EXPRESSION, a2);
 					match(T_RBRACK, nt, a3); if(a3->error) goto nt_factor__synch;
-					if(unPP(a2->type) == INT && isArrayType(a0->in.type))
-						a0->type = unArrayType(a0->in.type);
-					else
+					if(a2->type.st_type == INT && a0->in.type.isArray) {
+						a0->type = a0->in.type;
+						a0->type.isArray = false;
+					} else
 						a0->errHere = true;
 					break;
 				default:
@@ -409,7 +415,7 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_ID:
 					match(T_ID, nt, a1); if(a1->error) goto nt_identifier_list_synch;
-					addVariable(a1->lexeme, PGPARM);
+					addVariable(a1->lexeme, (Type) {.st_type = PGPARM});
 					consume(NT_IDENTIFIER_LIST_, a2);
 					break;
 				default:
@@ -424,7 +430,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_COMMA:
 					match(T_COMMA, nt, a1); if(a1->error) goto nt_identifier_list__synch;
 					match(T_ID, nt, a2); if(a2->error) goto nt_identifier_list__synch;
-					addVariable(a2->lexeme, PGPARM);
+					addVariable(a2->lexeme, (Type) {.st_type = PGPARM});
 					consume(NT_IDENTIFIER_LIST_, a3);
 					break;
 				case T_RPAREN:
@@ -500,7 +506,7 @@ void consume(NonTerminal nt, Item *a0) {
 					a3->in.proc = a2->lexeme;
 					consume(NT_PROCEDURE_STATEMENT_, a3);
 
-					if(checkSymbolTable(a2->lexeme, false)->type == PROCNAME) {
+					if(checkSymbolTable(a2->lexeme, false)->type.st_type == PROCNAME) {
 					} else {
 						a0->errHere = true;
 					}
@@ -540,7 +546,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_PROGRAM:
 					match(T_PROGRAM, nt, a1); if(a1->error) goto nt_program_synch;
 					match(T_ID, nt, a2); if(a2->error) goto nt_program_synch;
-					enterProcedure(a2->lexeme, PGNAME);
+					enterProcedure(a2->lexeme, (Type) {.st_type = PGNAME});
 					match(T_LPAREN, nt, a3); if(a3->error) goto nt_program_synch;
 					consume(NT_IDENTIFIER_LIST, a4);
 					match(T_RPAREN, nt, a5); if(a5->error) goto nt_program_synch;
@@ -618,20 +624,20 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 					consume(NT_TERM, a1);
 					consume(NT_SIMPLE_EXPRESSION_, a2);
-					if(a1->type == INT && a2->type == INT)
-						a0->type = INT;
+					if(a1->type.st_type == INT && a2->type.st_type == INT)
+						a0->type.st_type = INT;
 					else
-						a0->type = REAL;
+						a0->type.st_type = REAL;
 					break;
 				case T_MINUS:
 				case T_PLUS:
 					consume(NT_SIGN, a1);
 					consume(NT_TERM, a2);
 					consume(NT_SIMPLE_EXPRESSION_, a3);
-					if(a2->type == INT && a3->type == INT)
-						a0->type = INT;
+					if(a2->type.st_type == INT && a3->type.st_type == INT)
+						a0->type.st_type = INT;
 					else
-						a0->type = REAL;
+						a0->type.st_type = REAL;
 					break;
 				default:
 					synerr((int[]){T_ID, T_LPAREN, T_NUM, T_PLUS, T_MINUS, T_NOT}, 6, currTerm);
@@ -645,10 +651,10 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_ADDOP, nt, a1); if(a1->error) goto nt_simple_expression__synch;
 					consume(NT_TERM, a2);
 					consume(NT_SIMPLE_EXPRESSION_, a3);
-					if(a2->type == INT && a3->type == INT)
-						a0->type = INT;
+					if(a2->type.st_type == INT && a3->type.st_type == INT)
+						a0->type.st_type = INT;
 					else
-						a0->type = REAL;
+						a0->type.st_type = REAL;
 					break;
 				case T_COMMA:
 				case T_DO:
@@ -659,7 +665,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_RPAREN:
 				case T_SEMICOLON:
 				case T_THEN:
-					a0->type = INT;
+					a0->type.st_type = INT;
 					break;
 				default:
 					synerr((int[]){T_THEN, T_ELSE, T_COMMA, T_SEMICOLON, T_ADDOP, T_DO, T_RPAREN, T_RELOP, T_RBRACK, T_END}, 10, currTerm);
@@ -672,11 +678,11 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_INTEGER:
 					match(T_INTEGER, nt, a1); if(a1->error) goto nt_standard_type_synch;
-					a0->type = INT;
+					a0->type.st_type = INT;
 					break;
 				case T_REAL:
 					match(T_REAL, nt, a1); if(a1->error) goto nt_standard_type_synch;
-					a0->type = REAL;
+					a0->type.st_type = REAL;
 					break;
 				default:
 					synerr((int[]){T_INTEGER, T_REAL}, 2, currTerm);
@@ -697,7 +703,7 @@ void consume(NonTerminal nt, Item *a0) {
 					consume(NT_VARIABLE, a1);
 					match(T_ASSIGNOP, nt, a2); if(a2->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a3);
-					if(a1->type != a3->type) {
+					if(!typeEqual(a1->type,a3->type)) {
 						a0->errHere = true;
 						semerr("Type mismatch on an assignment");
 						semerr(typeToString(a1->type));
@@ -707,7 +713,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_IF:
 					match(T_IF, nt, a1); if(a1->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a2);
-					if(a2->type != INT) {
+					if(a2->type.st_type != INT) {
 						a0->errHere = true;
 						semerr("Type mismatch on an if statement");
 					}
@@ -718,7 +724,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_WHILE:
 					match(T_WHILE, nt, a1); if(a1->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a2);
-					if(a2->type != INT)
+					if(a2->type.st_type != INT)
 						a0->errHere = true;
 					match(T_DO, nt, a3); if(a3->error) goto nt_statement_synch;
 					consume(NT_STATEMENT, a4);
@@ -861,7 +867,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_PROCEDURE:
 					match(T_PROCEDURE, nt, a1); if(a1->error) goto nt_subprogram_head_synch;
 					match(T_ID, nt, a2); if(a2->error) goto nt_subprogram_head_synch;
-					enterProcedure(a2->lexeme, PROCNAME);
+					enterProcedure(a2->lexeme, (Type) {.st_type = PROCNAME});
 					consume(NT_SUBPROGRAM_HEAD_, a3);
 					break;
 				default:
@@ -895,10 +901,10 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 					consume(NT_FACTOR, a1);
 					consume(NT_TERM_, a2);
-					if(unPP(a1->type) == INT && unPP(a2->type) == INT)
-						a0->type = INT;
+					if(a1->type.st_type == INT && a2->type.st_type == INT)
+						a0->type.st_type = INT;
 					else
-						a0->type = REAL;
+						a0->type.st_type = REAL;
 					break;
 				default:
 					synerr((int[]){T_ID, T_NUM, T_LPAREN, T_NOT}, 4, currTerm);
@@ -918,16 +924,16 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_RPAREN:
 				case T_SEMICOLON:
 				case T_THEN:
-					a0->type = INT;
+					a0->type.st_type = INT;
 					break;
 				case T_MULOP:
 					match(T_MULOP, nt, a1); if(a1->error) goto nt_term__synch;
 					consume(NT_FACTOR, a2);
 					consume(NT_TERM_, a3);
-					if(unPP(a2->type) == INT && unPP(a3->type) == INT)
-						a0->type = INT;
+					if(a2->type.st_type == INT && a3->type.st_type == INT)
+						a0->type.st_type = INT;
 					else
-						a0->type = REAL;
+						a0->type.st_type = REAL;
 					break;
 				default:
 					synerr((int[]){T_THEN, T_ELSE, T_COMMA, T_SEMICOLON, T_ADDOP, T_DO, T_RPAREN, T_MULOP, T_RELOP, T_RBRACK, T_END}, 11, currTerm);
@@ -947,10 +953,19 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_RBRACK, nt, a6); if(a6->error) goto nt_type_synch;
 					match(T_OF, nt, a7); if(a7->error) goto nt_type_synch;
 					consume(NT_STANDARD_TYPE, a8);
-					if(unPP(a3->type) == INT && unPP(a5->type) == INT)
-						a0->type = makeArrayType(a8->type);
-					else
+					if(a3->type.st_type == INT && a5->type.st_type == INT) {
+						a0->type = a8->type;
+						a0->type.isArray = true;
+						a0->type.low = atoi(a3->lexeme);
+						a0->type.high = atoi(a5->lexeme);
+						if(a0->type.high < a0->type.low) {
+							a0->errHere = true;
+							semerr("Array bounds should be nondecreasing.");
+						}
+					} else {
 						a0->errHere = true;
+						semerr("Array bounds must be integer.");
+					}
 					break;
 				case T_INTEGER:
 				case T_REAL:
@@ -988,7 +1003,8 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_LBRACK, nt, a1); if(a1->error) goto nt_variable__synch;
 					consume(NT_EXPRESSION, a2);
 					match(T_RBRACK, nt, a3); if(a3->error) goto nt_variable__synch;
-					a0->type = unArrayType(a0->in.type);
+					a0->type = a0->in.type;
+					a0->type.isArray = false;
 					break;
 				default:
 					synerr((int[]){T_LBRACK, T_ASSIGNOP}, 2, currTerm);
@@ -999,12 +1015,12 @@ void consume(NonTerminal nt, Item *a0) {
 			break;
 
 	}
-	for(int i = 0; i < depth; i++) putchar(' ');
-	printf("%s", ntToString(nt));
-	printf(" %s", typeToString(a0->type));
-	if(a0->error) printf(" ERR");
-	if(a0->errHere) printf(" ERR*");
-	putchar('\n');
+	for(int i = 0; i < depth; i++) fprintf(fTree, " ");
+	fprintf(fTree, "%s", ntToString(nt));
+	fprintf(fTree, " %s", typeToString(a0->type));
+	if(a0->error) fprintf(fTree, " ERR");
+	if(a0->errHere) fprintf(fTree, " ERR*");
+	fprintf(fTree, "\n");
 	depth--;
 	if(a1->errHere || a1->error || a2->errHere || a2->error || a3->errHere || a3->error || a4->errHere || a4->error || a5->errHere || a5->error || a6->errHere || a6->error || a7->errHere || a7->error || a8->errHere || a8->error) {
 		a0->error = true;
@@ -1110,20 +1126,20 @@ void synch(NonTerminal nt) {
 
 int match(int termtype, NonTerminal nt, Item *a0) {
 	if(currTerm.type == termtype) {
-		for(int i = 0; i < depth; i++) fprintf(stdout, " ");
-		fprintf(stdout, "%s\n", convertConstantToString(currTerm.type));
-		for(int i = 0; i < depth+1; i++) fprintf(stdout, " ");
-		fprintf(stdout, "\"%s\"\n", currTerm.lexeme);
+		for(int i = 0; i < depth; i++) fprintf(fTree, " ");
+		fprintf(fTree, "%s\n", convertConstantToString(currTerm.type));
+		for(int i = 0; i < depth+1; i++) fprintf(fTree, " ");
+		fprintf(fTree, "\"%s\"\n", currTerm.lexeme);
 
 		a0->lexeme = currTerm.lexeme;
 		if(currTerm.type == T_NUM) {
 			switch(currTerm.attribute) {
 				case NUM_INT:
-					a0->type = INT;
+					a0->type.st_type = INT;
 					break;
 				case NUM_REAL:
 				case NUM_LONGREAL:
-					a0->type = REAL;
+					a0->type.st_type = REAL;
 					break;
 			}
 		}
@@ -1149,7 +1165,7 @@ void synerr(int *expected, int expLen, Terminal encountered) {
 	}
 	fprintf(stderr, "%s\n", convertConstantToString(expected[expLen-1]));
 
-	retCode |= 2;
+	retCode |= RET_SYNERR;
 }
 
 int main(int argc, char** argv) {
@@ -1164,6 +1180,10 @@ int main(int argc, char** argv) {
 	strcpy(sfList, sfSrc);
 	strcpy(sfList + strlen(sfSrc) - 4, ".lst");
 	fList = fopen(sfList, "w");
+	char sfTable[80];
+	strcpy(sfTable, sfSrc);
+	strcpy(sfTable + strlen(sfSrc) - 4, ".tbl");
+	fTable = fopen(sfTable, "w");
 
 	cLine = 1;
 	cColumn = 0;
@@ -1171,6 +1191,13 @@ int main(int argc, char** argv) {
 	parse();
 	fclose(fSrc);
 	fclose(fTree);
+	fclose(fList);
+	fclose(fTable);
+	if(retCode) {
+		remove(sfTree);
+		remove(sfList);
+		remove(sfTable);
+	}
 	return retCode;
 }
 
@@ -1204,12 +1231,12 @@ void lexerr(Terminal res) {
 	fprintf(fList, "%s, column %d\n", convertConstantToString(res.error), cColumn);
 	fprintf(stderr, "%s, line %d, column %d\n", convertConstantToString(res.error), cLine, cColumn);
 
-	retCode |= 4;
+	retCode |= RET_LEXERR;
 }
 
 void semerr(char *msg) {
-	fprintf(fList, "Semantic error, column %d: %s\n", cColumn, msg);
-	fprintf(stderr, "Semantic error, line %d, column %d: %s\n", cColumn, cLine, msg);
+	fprintf(fList, "Semantic error: %s\n", msg);
+	fprintf(stderr, "Semantic error, line %d: %s\n", cLine-1, msg);
 
-	retCode |= 8;
+	retCode |= RET_SEMERR;
 }

@@ -8,6 +8,7 @@ extern void semerr(char*);
 
 void initTable(char*, Type);
 SymbolTable* createNode(char*, Type);
+char* stTypeToString(StandardType);
 
 SymbolTable *root;
 SymbolTable *frontier;
@@ -104,90 +105,81 @@ SymbolTableEntry* nthParamOfProc(char* word, int n) {
 	SymbolTable* proc = findNode(word, false);
 	SymbolTable* pParam = proc;
 	for(int i = 0; i <= n; i++) {
-		if(i) pParam = pParam->next;
-		else pParam = pParam->lchild;
-		if(!pParam || !isParameterType(pParam->entry->type))
+		if(!i) pParam = pParam->lchild;
+		else pParam = pParam->next;
+		if(!pParam || !pParam->entry->type.isParam)
 			return NULL;
 	}
 	return pParam->entry;
 }
 	
 
-void printTable(SymbolTable *base, int depth) {
+void printTable(FILE* f, SymbolTable *base, int depth, int offset) {
 	if(!base || !base->entry) return;
-	for(int i = 0; i < depth; i++) putchar(' ');
-	printf("%s %s\n", base->entry->word, typeToString(base->entry->type));
-	printTable(base->lchild, depth + 1);
-	printTable(base->next, depth);
+	for(int i = 0; i < depth; i++) fprintf(f, " ");
+	if(typeSize(base->entry->type) > 0) fprintf(f, "%s %s offset %d\n", base->entry->word, typeToString(base->entry->type), offset);
+	printTable(f, base->lchild, depth + 1, 0);
+	printTable(f, base->next, depth, offset + typeSize(base->entry->type));
 }
 
-// type functions
-bool isArrayType(Type t) {
-	return t == AINT || t == AREAL || t == PPAINT || t == PPAREAL;
-}
-
-Type makeArrayType(Type t) {
-	switch(t) {
-		case REAL:
-		case PPREAL:
-			return AREAL;
-		case INT:
-		case PPINT:
-			return AINT;
-		default: return t;
-	}
-}
-
-Type unArrayType(Type t) {
-	switch(t) {
-		case AREAL:
-		case PPAREAL:
-			return REAL;
-		case AINT:
-		case PPAINT:
-			return INT;
-		default: return t;
-	}
-}
-
-bool isParameterType(Type t) {
-	return t == PPINT || t == PPREAL || t == PPAINT || t == PPAREAL;
+int typeSize(Type t) {
+	int stSize;
+	if(t.st_type == INT) stSize = 4;
+	else if(t.st_type == REAL) stSize = 8;
+	else stSize = 0;
+	
+	if(t.isArray) return stSize * (t.high - t.low + 1);
+	else return stSize;
 }
 
 Type makeParameterType(Type t) {
-	switch(t) {
-		case INT: return PPINT;
-		case REAL: return PPREAL;
-		case AINT: return PPAINT;
-		case AREAL: return PPAREAL;
-		default: return t;
-	}
+	Type ret = t;
+	ret.isParam = true;
+	return ret;
 }
 
 Type unParameterType(Type t) {
-	switch(t) {
-		case PPINT: return INT;
-		case PPREAL: return REAL;
-		case PPAINT: return AINT;
-		case PPAREAL: return AREAL;
-		default: return t;
-	}
+	Type ret = t;
+	ret.isParam = false;
+	return ret;
 }
 
-char *typeToString(Type t) {
+char* typeToString(Type t) {
+	if(t.st_type == NONE) return "";
+
+	char *res = malloc(100*sizeof(char));
+	res[0] = '(';
+	int i = 1;
+	if(t.isArray)
+		i += sprintf(res+i, "array [%d..%d] of ", t.low, t.high);
+		
+	i += sprintf(res+i, "%s", stTypeToString(t.st_type));
+
+	if(t.isParam && t.st_type != PGPARM)
+		i += sprintf(res+i, ", proc param");
+
+	i += sprintf(res+i, ")");
+	return res;
+}
+
+char *stTypeToString(StandardType t) {
 	switch(t) {
 	case NONE: return "";
-	case PGNAME: return "(program name)";
-	case PGPARM: return "(program param)";
-	case PROCNAME: return "(procedure name)";
-	case INT: return "(int)";
-	case AINT: return "(array of int)";
-	case PPINT: return "(int, proc param)";
-	case PPAINT: return "(array of int, proc param)";
-	case REAL: return "(real)";
-	case PPREAL: return "(real, proc param)";
-	case AREAL: return "(array of real)";
-	case PPAREAL: return "(array of real, proc param)";
-	default: return "FIXMEFIXME";
+	case PGNAME: return "program name";
+	case PGPARM: return "program param";
+	case PROCNAME: return "procedure name";
+	case REAL: return "real";
+	case INT: return "int";
 	}
+	return "";
+}
+
+bool typeEqual(Type t1, Type t2) {
+	if(t1.st_type != t2.st_type) return false;
+	if(t1.isArray != t2.isArray) return false;
+	if(t1.isArray == true) {
+		if(t1.low != t2.low) return false;
+		if(t1.high != t2.high) return false;
+	}
+	return true;
 }
