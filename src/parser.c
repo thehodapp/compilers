@@ -2,15 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <string.h>
 #include "types.h"
 #include "machines.h"
 #include "item.h"
 
-#define RET_TYPERR 16
 #define RET_SYNERR  2
 #define RET_LEXERR  4
 #define RET_SEMERR  8
+#define RET_TYPERR 16
 
 extern SymbolTable* root;
 int depth = 0;
@@ -128,10 +129,7 @@ void parse() {
 	Item *a0 = malloc(sizeof(Item));
 	consume(top_nonterminal, a0);
 
-	if(a0->error) {
-		fprintf(stderr, "Type errors encountered.\n");
-	}
-
+	if(a0->error) retCode |= RET_TYPERR;
 	printTable(fTable, root, 0, 0);
 }
 
@@ -301,10 +299,12 @@ void consume(NonTerminal nt, Item *a0) {
 					if(!nthParamOfProc(a0->in.proc, 0)) {
 						a0->errHere = true;
 						semerr("argument count mismatch at first parameter");
-					} else if(nthParamOfProc(a0->in.proc, 0)->type.st_type != a1->type.st_type) {
+					} else if(!typeEqual(nthParamOfProc(a0->in.proc, 0)->type, a1->type)) {
 						a0->errHere = true;
-						semerr("type mismatch, first parameter");
-						fprintf(stderr, "parameter %d, formal type %s, received type %s\n", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
+						char *buff = malloc(400*sizeof(char));
+						sprintf(buff, "type mismatch, parameter %d; formal type %s; received type %s", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
+						semerr(buff);
+						free(buff);
 					}
 					break;
 				default:
@@ -324,19 +324,25 @@ void consume(NonTerminal nt, Item *a0) {
 
 					if(!nthParamOfProc(a0->in.proc, a0->in.count)) {
 						a0->errHere = true;
-						semerr("argument count mismatch at a parameter");
-						fprintf(stderr, "Calling procedure %s\n", a0->in.proc);
-					} else if(nthParamOfProc(a0->in.proc, a0->in.count)->type.st_type != a2->type.st_type) {
+						char *buff = malloc(500);
+						sprintf(buff, "Argument count mismatch while calling procedure %s", a0->in.proc);
+						semerr(buff);
+						free(buff);
+					} else if(!typeEqual(nthParamOfProc(a0->in.proc, a0->in.count)->type,  a2->type)) {
 						a0->errHere = true;
-						semerr("type mismatch on a parameter");
-						fprintf(stderr, "Calling procedure %s, argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a2->type));
+						char *buff = malloc(500);
+						sprintf(buff, "Type mismatch while calling procedure %s: argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a2->type));
+						semerr(buff);
+						free(buff);
 					}
 					break;
 				case T_RPAREN:
 					if(nthParamOfProc(a0->in.proc, a0->in.count)) {
 						a0->errHere = true;
-						semerr("argument count mismatch at a parameter");
-						fprintf(stderr, "Calling procedure %s, argument %d, formal param exists; did not pass actual param\n", a0->in.proc, a0->in.count);
+						char *buff = malloc(500);
+						sprintf(buff, "Argument count mismatch while calling procedure %s: argument %d, formal param exists; did not pass actual param\n", a0->in.proc, a0->in.count);
+						semerr(buff);
+						free(buff);
 					}
 					break;
 				default:
@@ -350,9 +356,17 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_ID:
 					match(T_ID, nt, a1); if(a1->error) goto nt_factor_synch;
-					a2->in.type = checkSymbolTable(a1->lexeme, false)->type;
-					consume(NT_FACTOR_, a2);
-					a0->type = a2->type;
+					if(checkSymbolTable(a1->lexeme, false)) {
+						a2->in.type = checkSymbolTable(a1->lexeme, false)->type;
+						consume(NT_FACTOR_, a2);
+						a0->type = a2->type;
+					} else {
+						a0->errHere = true;
+						char *buff = malloc(strlen(a1->lexeme) + strlen("Unknown symbol: "));
+						sprintf(buff, "Unknown symbol: %s", a1->lexeme);
+						semerr(buff);
+						free(buff);
+					}
 					break;
 				case T_LPAREN:
 					match(T_LPAREN, nt, a1); if(a1->error) goto nt_factor_synch;
@@ -486,7 +500,6 @@ void consume(NonTerminal nt, Item *a0) {
 					consume(NT_TYPE, a4);
 
 					addVariable(a2->lexeme, makeParameterType(a4->type));
-					checkSymbolTable(a2->lexeme, true)->type = makeParameterType(a4->type);
 
 					consume(NT_PARAMETER_LIST_, a5);
 					break;
@@ -506,9 +519,12 @@ void consume(NonTerminal nt, Item *a0) {
 					a3->in.proc = a2->lexeme;
 					consume(NT_PROCEDURE_STATEMENT_, a3);
 
-					if(checkSymbolTable(a2->lexeme, false)->type.st_type == PROCNAME) {
-					} else {
+					if(!checkSymbolTable(a2->lexeme, false) || checkSymbolTable(a2->lexeme, false)->type.st_type != PROCNAME) {
 						a0->errHere = true;
+						char *buff = malloc(strlen(a2->lexeme) + strlen("Unknown symbol: "));
+						sprintf(buff, "Unknown symbol: %s", a2->lexeme);
+						semerr(buff);
+						free(buff);
 					}
 					break;
 				default:
@@ -703,11 +719,12 @@ void consume(NonTerminal nt, Item *a0) {
 					consume(NT_VARIABLE, a1);
 					match(T_ASSIGNOP, nt, a2); if(a2->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a3);
-					if(!typeEqual(a1->type,a3->type)) {
+					if(!typeEqual(a1->type, a3->type)) {
 						a0->errHere = true;
-						semerr("Type mismatch on an assignment");
-						semerr(typeToString(a1->type));
-						semerr(typeToString(a3->type));
+						char *buff = malloc(100);
+						sprintf(buff, "Type mismatch on an assignment: tried assigning %s to %s", typeToString(a3->type), typeToString(a1->type));
+						semerr(buff);
+						free(buff);
 					}
 					break;
 				case T_IF:
@@ -901,7 +918,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 					consume(NT_FACTOR, a1);
 					consume(NT_TERM_, a2);
-					if(a1->type.st_type == INT && a2->type.st_type == INT)
+					if(a1->type.st_type == INT && (a2->type.st_type == INT || a2->type.st_type == NONE))
 						a0->type.st_type = INT;
 					else
 						a0->type.st_type = REAL;
@@ -983,9 +1000,17 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_ID:
 					match(T_ID, nt, a1); if(a1->error) goto nt_variable_synch;
-					a2->in.type = checkSymbolTable(a1->lexeme, false)->type;
-					consume(NT_VARIABLE_, a2);
-					a0->type = a2->type;
+					if(checkSymbolTable(a1->lexeme, false)) {
+						a2->in.type = checkSymbolTable(a1->lexeme, false)->type;
+						consume(NT_VARIABLE_, a2);
+						a0->type = a2->type;
+					} else {
+						a0->errHere = true;
+						char *buff = malloc(strlen(a1->lexeme) + strlen("Unknown symbol: "));
+						sprintf(buff, "Unknown symbol: %s", a1->lexeme);
+						semerr(buff);
+						free(buff);
+					}
 					break;
 				default:
 					synerr((int[]){T_ID}, 1, currTerm);
@@ -1154,12 +1179,12 @@ int match(int termtype, NonTerminal nt, Item *a0) {
 void synerr(int *expected, int expLen, Terminal encountered) {
 	char *str = " one of";
 	if(expLen == 1) str = "";
-	fprintf(fList, "SYNERR, column %d: Unexpected %s; expected%s: ", cColumn, convertConstantToString(encountered.type), str);
+	fprintf(fList, "Syntax error, column %d: Unexpected %s; expected%s: ", cColumn, convertConstantToString(encountered.type), str);
 	for(int i = 0; i < expLen - 1; i++) {
 		fprintf(fList, "%s, ", convertConstantToString(expected[i]));
 	}
 	fprintf(fList, "%s\n", convertConstantToString(expected[expLen-1]));
-	fprintf(stderr, "SYNERR, line %d, column %d: Unexpected %s; expected%s: ", cLine, cColumn, convertConstantToString(encountered.type), str);
+	fprintf(stderr, "Syntax error, line %d, column %d: Unexpected %s; expected%s: ", cLine, cColumn, convertConstantToString(encountered.type), str);
 	for(int i = 0; i < expLen - 1; i++) {
 		fprintf(stderr, "%s, ", convertConstantToString(expected[i]));
 	}
@@ -1193,10 +1218,22 @@ int main(int argc, char** argv) {
 	fclose(fTree);
 	fclose(fList);
 	fclose(fTable);
-	if(retCode) {
-		remove(sfTree);
-		remove(sfList);
-		remove(sfTable);
+
+	if(retCode) fprintf(stderr, "\n");
+	if(retCode & RET_LEXERR) {
+		fprintf(stderr, "Lexical errors encountered.\n");
+		//remove(sfList);
+	}
+	if(retCode & RET_SYNERR) {
+		fprintf(stderr, "Syntax errors encountered.\n");
+		//remove(sfTree);
+	}
+	if(retCode & RET_SEMERR) {
+		fprintf(stderr, "Semantic errors encountered.\n");
+		//remove(sfTable);
+	}
+	if(retCode & RET_TYPERR) {
+		fprintf(stderr, "Type errors encountered.\n");
 	}
 	return retCode;
 }

@@ -1,7 +1,7 @@
 program types(input);
 var b: integer;
 var a: integer;
-var c: array[2..1] of real;
+var c: array[1..2] of real;
 var d: real;
 	procedure foo(b: integer; a: integer);
 		procedure baz(b: integer);
@@ -11,12 +11,12 @@ var d: real;
 	begin
 	end;
 
-	procedure bar(a: integer);
+	procedure bar(a: array[1..2] of real);
 	begin
 	end;
 
 begin
 	a := b;
 	b := a;
-	call bar(a, c[b])
+	call bar(c)
 end.

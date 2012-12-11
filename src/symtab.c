@@ -118,6 +118,7 @@ void printTable(FILE* f, SymbolTable *base, int depth, int offset) {
 	if(!base || !base->entry) return;
 	for(int i = 0; i < depth; i++) fprintf(f, " ");
 	if(typeSize(base->entry->type) > 0) fprintf(f, "%s %s offset %d\n", base->entry->word, typeToString(base->entry->type), offset);
+	else fprintf(f, "%s\n", base->entry->word);
 	printTable(f, base->lchild, depth + 1, 0);
 	printTable(f, base->next, depth, offset + typeSize(base->entry->type));
 }
@@ -145,8 +146,6 @@ Type unParameterType(Type t) {
 }
 
 char* typeToString(Type t) {
-	if(t.st_type == NONE) return "";
-
 	char *res = malloc(100*sizeof(char));
 	res[0] = '(';
 	int i = 1;
@@ -164,7 +163,7 @@ char* typeToString(Type t) {
 
 char *stTypeToString(StandardType t) {
 	switch(t) {
-	case NONE: return "";
+	case NONE: return "unknown";
 	case PGNAME: return "program name";
 	case PGPARM: return "program param";
 	case PROCNAME: return "procedure name";
