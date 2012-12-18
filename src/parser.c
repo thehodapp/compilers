@@ -80,7 +80,7 @@ char* ntToString(NonTerminal nt) {
 #undef x
 void parse(void);
 void consume(NonTerminal, Item*);
-int match(int, NonTerminal, Item*);
+int match(int, Item*);
 void synch(NonTerminal);
 void synerr(int*, int, Terminal);
 void lexerr(Terminal);
@@ -123,9 +123,9 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_ARGUMENTS:
 			switch(currTerm.type) {
 				case T_LPAREN:
-					match(T_LPAREN, nt, a1); if(a1->error) goto nt_arguments_synch;
+					match(T_LPAREN, a1); if(a1->error) goto nt_arguments_synch;
 					consume(NT_PARAMETER_LIST, a2);
-					match(T_RPAREN, nt, a3); if(a3->error) goto nt_arguments_synch;
+					match(T_RPAREN, a3); if(a3->error) goto nt_arguments_synch;
 					break;
 				default:
 					synerr((int[]){T_LPAREN}, 1, currTerm);
@@ -137,7 +137,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_COMPOUND_STATEMENT:
 			switch(currTerm.type) {
 				case T_BEGIN:
-					match(T_BEGIN, nt, a1); if(a1->error) goto nt_compound_statement_synch;
+					match(T_BEGIN, a1); if(a1->error) goto nt_compound_statement_synch;
 					consume(NT_COMPOUND_STATEMENT_, a2);
 					break;
 				default:
@@ -155,10 +155,10 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_IF:
 				case T_WHILE:
 					consume(NT_OPTIONAL_STATEMENTS, a1);
-					match(T_END, nt, a2); if(a2->error) goto nt_compound_statement__synch;
+					match(T_END, a2); if(a2->error) goto nt_compound_statement__synch;
 					break;
 				case T_END:
-					match(T_END, nt, a1); if(a1->error) goto nt_compound_statement__synch;
+					match(T_END, a1); if(a1->error) goto nt_compound_statement__synch;
 					break;
 				default:
 					synerr((int[]){T_ID, T_IF, T_WHILE, T_BEGIN, T_CALL, T_END}, 6, currTerm);
@@ -170,12 +170,12 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_DECLARATIONS:
 			switch(currTerm.type) {
 				case T_VAR:
-					match(T_VAR, nt, a1); if(a1->error) goto nt_declarations_synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_declarations_synch;
-					match(T_COLON, nt, a3); if(a3->error) goto nt_declarations_synch;
+					match(T_VAR, a1); if(a1->error) goto nt_declarations_synch;
+					match(T_ID, a2); if(a2->error) goto nt_declarations_synch;
+					match(T_COLON, a3); if(a3->error) goto nt_declarations_synch;
 					consume(NT_TYPE, a4);
 					addVariable(a2->lexeme, a4->type);
-					match(T_SEMICOLON, nt, a5); if(a5->error) goto nt_declarations_synch;
+					match(T_SEMICOLON, a5); if(a5->error) goto nt_declarations_synch;
 					consume(NT_DECLARATIONS_, a6);
 					break;
 				default:
@@ -192,12 +192,12 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_SEMICOLON:
 					break;
 				case T_VAR:
-					match(T_VAR, nt, a1); if(a1->error) goto nt_declarations__synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_declarations__synch;
-					match(T_COLON, nt, a3); if(a3->error) goto nt_declarations__synch;
+					match(T_VAR, a1); if(a1->error) goto nt_declarations__synch;
+					match(T_ID, a2); if(a2->error) goto nt_declarations__synch;
+					match(T_COLON, a3); if(a3->error) goto nt_declarations__synch;
 					consume(NT_TYPE, a4);
 					addVariable(a2->lexeme, a4->type);
-					match(T_SEMICOLON, nt, a5); if(a5->error) goto nt_declarations__synch;
+					match(T_SEMICOLON, a5); if(a5->error) goto nt_declarations__synch;
 					consume(NT_DECLARATIONS_, a6);
 					break;
 				default:
@@ -239,7 +239,7 @@ void consume(NonTerminal nt, Item *a0) {
 					a0->type = a0->in.type;
 					break;
 				case T_RELOP:
-					match(T_RELOP, nt, a1); if(a1->error) goto nt_expression__synch;
+					match(T_RELOP, a1); if(a1->error) goto nt_expression__synch;
 					consume(NT_SIMPLE_EXPRESSION, a2);
 
 					if(typeEqual(a2->type, a0->in.type))
@@ -286,7 +286,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_EXPRESSION_LIST_:
 			switch(currTerm.type) {
 				case T_COMMA:
-					match(T_COMMA, nt, a1); if(a1->error) goto nt_expression_list__synch;
+					match(T_COMMA, a1); if(a1->error) goto nt_expression_list__synch;
 					consume(NT_EXPRESSION, a2);
 					a3->in.count = a0->in.count + 1;
 					a3->in.proc = a0->in.proc;
@@ -316,7 +316,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_FACTOR:
 			switch(currTerm.type) {
 				case T_ID:
-					match(T_ID, nt, a1); if(a1->error) goto nt_factor_synch;
+					match(T_ID, a1); if(a1->error) goto nt_factor_synch;
 					if(checkSymbolTable(a1->lexeme, false)) {
 						a2->in.type = checkSymbolTable(a1->lexeme, false)->type;
 						consume(NT_FACTOR_, a2);
@@ -327,13 +327,13 @@ void consume(NonTerminal nt, Item *a0) {
 					}
 					break;
 				case T_LPAREN:
-					match(T_LPAREN, nt, a1); if(a1->error) goto nt_factor_synch;
+					match(T_LPAREN, a1); if(a1->error) goto nt_factor_synch;
 					consume(NT_EXPRESSION, a2);
-					match(T_RPAREN, nt, a3); if(a3->error) goto nt_factor_synch;
+					match(T_RPAREN, a3); if(a3->error) goto nt_factor_synch;
 					a0->type = a2->type;
 					break;
 				case T_NOT:
-					match(T_NOT, nt, a1); if(a1->error) goto nt_factor_synch;
+					match(T_NOT, a1); if(a1->error) goto nt_factor_synch;
 					consume(NT_FACTOR, a2);
 					if(a2->type.st_type == INT)
 						a0->type = a2->type;
@@ -341,7 +341,7 @@ void consume(NonTerminal nt, Item *a0) {
 						a0->errHere = true;
 					break;
 				case T_NUM:
-					match(T_NUM, nt, a1); if(a1->error) goto nt_factor_synch;
+					match(T_NUM, a1); if(a1->error) goto nt_factor_synch;
 					a0->type = a1->type;
 					break;
 				default:
@@ -367,9 +367,9 @@ void consume(NonTerminal nt, Item *a0) {
 					a0->type = a0->in.type;
 					break;
 				case T_LBRACK:
-					match(T_LBRACK, nt, a1); if(a1->error) goto nt_factor__synch;
+					match(T_LBRACK, a1); if(a1->error) goto nt_factor__synch;
 					consume(NT_EXPRESSION, a2);
-					match(T_RBRACK, nt, a3); if(a3->error) goto nt_factor__synch;
+					match(T_RBRACK, a3); if(a3->error) goto nt_factor__synch;
 					if(a2->type.st_type == INT && a0->in.type.isArray) {
 						a0->type = a0->in.type;
 						a0->type.isArray = false;
@@ -386,7 +386,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_IDENTIFIER_LIST:
 			switch(currTerm.type) {
 				case T_ID:
-					match(T_ID, nt, a1); if(a1->error) goto nt_identifier_list_synch;
+					match(T_ID, a1); if(a1->error) goto nt_identifier_list_synch;
 					addVariable(a1->lexeme, (Type) {.st_type = PGPARM});
 					consume(NT_IDENTIFIER_LIST_, a2);
 					break;
@@ -400,8 +400,8 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_IDENTIFIER_LIST_:
 			switch(currTerm.type) {
 				case T_COMMA:
-					match(T_COMMA, nt, a1); if(a1->error) goto nt_identifier_list__synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_identifier_list__synch;
+					match(T_COMMA, a1); if(a1->error) goto nt_identifier_list__synch;
+					match(T_ID, a2); if(a2->error) goto nt_identifier_list__synch;
 					addVariable(a2->lexeme, (Type) {.st_type = PGPARM});
 					consume(NT_IDENTIFIER_LIST_, a3);
 					break;
@@ -432,8 +432,8 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_PARAMETER_LIST:
 			switch(currTerm.type) {
 				case T_ID:
-					match(T_ID, nt, a1); if(a1->error) goto nt_parameter_list_synch;
-					match(T_COLON, nt, a2); if(a2->error) goto nt_parameter_list_synch;
+					match(T_ID, a1); if(a1->error) goto nt_parameter_list_synch;
+					match(T_COLON, a2); if(a2->error) goto nt_parameter_list_synch;
 					consume(NT_TYPE, a3);
 
 					addVariable(a1->lexeme, makeParameterType(a3->type));
@@ -452,9 +452,9 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_RPAREN:
 					break;
 				case T_SEMICOLON:
-					match(T_SEMICOLON, nt, a1); if(a1->error) goto nt_parameter_list__synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_parameter_list__synch;
-					match(T_COLON, nt, a3); if(a3->error) goto nt_parameter_list__synch;
+					match(T_SEMICOLON, a1); if(a1->error) goto nt_parameter_list__synch;
+					match(T_ID, a2); if(a2->error) goto nt_parameter_list__synch;
+					match(T_COLON, a3); if(a3->error) goto nt_parameter_list__synch;
 					consume(NT_TYPE, a4);
 
 					addVariable(a2->lexeme, makeParameterType(a4->type));
@@ -471,8 +471,8 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_PROCEDURE_STATEMENT:
 			switch(currTerm.type) {
 				case T_CALL:
-					match(T_CALL, nt, a1); if(a1->error) goto nt_procedure_statement_synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_procedure_statement_synch;
+					match(T_CALL, a1); if(a1->error) goto nt_procedure_statement_synch;
+					match(T_ID, a2); if(a2->error) goto nt_procedure_statement_synch;
 					a3->in.count = 0;
 					a3->in.proc = a2->lexeme;
 					consume(NT_PROCEDURE_STATEMENT_, a3);
@@ -499,11 +499,11 @@ void consume(NonTerminal nt, Item *a0) {
 					}
 					break;
 				case T_LPAREN:
-					match(T_LPAREN, nt, a1); if(a1->error) goto nt_procedure_statement__synch;
+					match(T_LPAREN, a1); if(a1->error) goto nt_procedure_statement__synch;
 					a2->in.count = a0->in.count;
 					a2->in.proc = a0->in.proc;
 					consume(NT_EXPRESSION_LIST, a2);
-					match(T_RPAREN, nt, a3); if(a3->error) goto nt_procedure_statement__synch;
+					match(T_RPAREN, a3); if(a3->error) goto nt_procedure_statement__synch;
 					break;
 				default:
 					synerr((int[]){T_ELSE, T_LPAREN, T_SEMICOLON, T_END}, 4, currTerm);
@@ -515,13 +515,13 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_PROGRAM:
 			switch(currTerm.type) {
 				case T_PROGRAM:
-					match(T_PROGRAM, nt, a1); if(a1->error) goto nt_program_synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_program_synch;
+					match(T_PROGRAM, a1); if(a1->error) goto nt_program_synch;
+					match(T_ID, a2); if(a2->error) goto nt_program_synch;
 					enterProcedure(a2->lexeme, (Type) {.st_type = PGNAME});
-					match(T_LPAREN, nt, a3); if(a3->error) goto nt_program_synch;
+					match(T_LPAREN, a3); if(a3->error) goto nt_program_synch;
 					consume(NT_IDENTIFIER_LIST, a4);
-					match(T_RPAREN, nt, a5); if(a5->error) goto nt_program_synch;
-					match(T_SEMICOLON, nt, a6); if(a6->error) goto nt_program_synch;
+					match(T_RPAREN, a5); if(a5->error) goto nt_program_synch;
+					match(T_SEMICOLON, a6); if(a6->error) goto nt_program_synch;
 					consume(NT_PROGRAM__, a7);
 					exitProcedure();
 					break;
@@ -536,12 +536,12 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_BEGIN:
 					consume(NT_COMPOUND_STATEMENT, a1);
-					match(T_PERIOD, nt, a2); if(a2->error) goto nt_program__synch;
+					match(T_PERIOD, a2); if(a2->error) goto nt_program__synch;
 					break;
 				case T_PROCEDURE:
 					consume(NT_SUBPROGRAM_DECLARATIONS, a1);
 					consume(NT_COMPOUND_STATEMENT, a2);
-					match(T_PERIOD, nt, a3); if(a3->error) goto nt_program__synch;
+					match(T_PERIOD, a3); if(a3->error) goto nt_program__synch;
 					break;
 				default:
 					synerr((int[]){T_BEGIN, T_PROCEDURE}, 2, currTerm);
@@ -554,12 +554,12 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_BEGIN:
 					consume(NT_COMPOUND_STATEMENT, a1);
-					match(T_PERIOD, nt, a2); if(a2->error) goto nt_program___synch;
+					match(T_PERIOD, a2); if(a2->error) goto nt_program___synch;
 					break;
 				case T_PROCEDURE:
 					consume(NT_SUBPROGRAM_DECLARATIONS, a1);
 					consume(NT_COMPOUND_STATEMENT, a2);
-					match(T_PERIOD, nt, a3); if(a3->error) goto nt_program___synch;
+					match(T_PERIOD, a3); if(a3->error) goto nt_program___synch;
 					break;
 				case T_VAR:
 					consume(NT_DECLARATIONS, a1);
@@ -575,10 +575,10 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_SIGN:
 			switch(currTerm.type) {
 				case T_MINUS:
-					match(T_MINUS, nt, a1); if(a1->error) goto nt_sign_synch;
+					match(T_MINUS, a1); if(a1->error) goto nt_sign_synch;
 					break;
 				case T_PLUS:
-					match(T_PLUS, nt, a1); if(a1->error) goto nt_sign_synch;
+					match(T_PLUS, a1); if(a1->error) goto nt_sign_synch;
 					break;
 				default:
 					synerr((int[]){T_PLUS, T_MINUS}, 2, currTerm);
@@ -619,7 +619,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_SIMPLE_EXPRESSION_:
 			switch(currTerm.type) {
 				case T_ADDOP:
-					match(T_ADDOP, nt, a1); if(a1->error) goto nt_simple_expression__synch;
+					match(T_ADDOP, a1); if(a1->error) goto nt_simple_expression__synch;
 					consume(NT_TERM, a2);
 					consume(NT_SIMPLE_EXPRESSION_, a3);
 					if(a2->type.st_type == INT && a3->type.st_type == INT)
@@ -648,11 +648,11 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_STANDARD_TYPE:
 			switch(currTerm.type) {
 				case T_INTEGER:
-					match(T_INTEGER, nt, a1); if(a1->error) goto nt_standard_type_synch;
+					match(T_INTEGER, a1); if(a1->error) goto nt_standard_type_synch;
 					a0->type.st_type = INT;
 					break;
 				case T_REAL:
-					match(T_REAL, nt, a1); if(a1->error) goto nt_standard_type_synch;
+					match(T_REAL, a1); if(a1->error) goto nt_standard_type_synch;
 					a0->type.st_type = REAL;
 					break;
 				default:
@@ -672,7 +672,7 @@ void consume(NonTerminal nt, Item *a0) {
 					break;
 				case T_ID:
 					consume(NT_VARIABLE, a1);
-					match(T_ASSIGNOP, nt, a2); if(a2->error) goto nt_statement_synch;
+					match(T_ASSIGNOP, a2); if(a2->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a3);
 					if(!typeEqual(a1->type, a3->type)) {
 						a0->errHere = true;
@@ -680,22 +680,22 @@ void consume(NonTerminal nt, Item *a0) {
 					}
 					break;
 				case T_IF:
-					match(T_IF, nt, a1); if(a1->error) goto nt_statement_synch;
+					match(T_IF, a1); if(a1->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a2);
 					if(a2->type.st_type != INT) {
 						a0->errHere = true;
 						semerr("Type mismatch on an if statement");
 					}
-					match(T_THEN, nt, a3); if(a3->error) goto nt_statement_synch;
+					match(T_THEN, a3); if(a3->error) goto nt_statement_synch;
 					consume(NT_STATEMENT, a4);
 					consume(NT_STATEMENT_, a5);
 					break;
 				case T_WHILE:
-					match(T_WHILE, nt, a1); if(a1->error) goto nt_statement_synch;
+					match(T_WHILE, a1); if(a1->error) goto nt_statement_synch;
 					consume(NT_EXPRESSION, a2);
 					if(a2->type.st_type != INT)
 						a0->errHere = true;
-					match(T_DO, nt, a3); if(a3->error) goto nt_statement_synch;
+					match(T_DO, a3); if(a3->error) goto nt_statement_synch;
 					consume(NT_STATEMENT, a4);
 					break;
 				default:
@@ -708,7 +708,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_STATEMENT_:
 			switch(currTerm.type) {
 				case T_ELSE:
-					match(T_ELSE, nt, a1); if(a1->error) goto nt_statement__synch;
+					match(T_ELSE, a1); if(a1->error) goto nt_statement__synch;
 					consume(NT_STATEMENT, a2);
 					break;
 				case T_END:
@@ -742,7 +742,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_END:
 					break;
 				case T_SEMICOLON:
-					match(T_SEMICOLON, nt, a1); if(a1->error) goto nt_statement_list__synch;
+					match(T_SEMICOLON, a1); if(a1->error) goto nt_statement_list__synch;
 					consume(NT_STATEMENT, a2);
 					consume(NT_STATEMENT_LIST_, a3);
 					break;
@@ -770,7 +770,7 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_PROCEDURE:
 					consume(NT_SUBPROGRAM_DECLARATION, a1);
-					match(T_SEMICOLON, nt, a2); if(a2->error) goto nt_subprogram_declarations_synch;
+					match(T_SEMICOLON, a2); if(a2->error) goto nt_subprogram_declarations_synch;
 					consume(NT_SUBPROGRAM_DECLARATIONS_, a3);
 					break;
 				default:
@@ -787,7 +787,7 @@ void consume(NonTerminal nt, Item *a0) {
 					break;
 				case T_PROCEDURE:
 					consume(NT_SUBPROGRAM_DECLARATION, a1);
-					match(T_SEMICOLON, nt, a2); if(a2->error) goto nt_subprogram_declarations__synch;
+					match(T_SEMICOLON, a2); if(a2->error) goto nt_subprogram_declarations__synch;
 					consume(NT_SUBPROGRAM_DECLARATIONS_, a3);
 					break;
 				default:
@@ -834,8 +834,8 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_SUBPROGRAM_HEAD:
 			switch(currTerm.type) {
 				case T_PROCEDURE:
-					match(T_PROCEDURE, nt, a1); if(a1->error) goto nt_subprogram_head_synch;
-					match(T_ID, nt, a2); if(a2->error) goto nt_subprogram_head_synch;
+					match(T_PROCEDURE, a1); if(a1->error) goto nt_subprogram_head_synch;
+					match(T_ID, a2); if(a2->error) goto nt_subprogram_head_synch;
 					enterProcedure(a2->lexeme, (Type) {.st_type = PROCNAME});
 					consume(NT_SUBPROGRAM_HEAD_, a3);
 					break;
@@ -850,10 +850,10 @@ void consume(NonTerminal nt, Item *a0) {
 			switch(currTerm.type) {
 				case T_LPAREN:
 					consume(NT_ARGUMENTS, a1);
-					match(T_SEMICOLON, nt, a2); if(a2->error) goto nt_subprogram_head__synch;
+					match(T_SEMICOLON, a2); if(a2->error) goto nt_subprogram_head__synch;
 					break;
 				case T_SEMICOLON:
-					match(T_SEMICOLON, nt, a1); if(a1->error) goto nt_subprogram_head__synch;
+					match(T_SEMICOLON, a1); if(a1->error) goto nt_subprogram_head__synch;
 					break;
 				default:
 					synerr((int[]){T_LPAREN, T_SEMICOLON}, 2, currTerm);
@@ -896,7 +896,7 @@ void consume(NonTerminal nt, Item *a0) {
 					a0->type.st_type = INT;
 					break;
 				case T_MULOP:
-					match(T_MULOP, nt, a1); if(a1->error) goto nt_term__synch;
+					match(T_MULOP, a1); if(a1->error) goto nt_term__synch;
 					consume(NT_FACTOR, a2);
 					consume(NT_TERM_, a3);
 					if(a2->type.st_type == INT && a3->type.st_type == INT)
@@ -914,13 +914,13 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_TYPE:
 			switch(currTerm.type) {
 				case T_ARRAY:
-					match(T_ARRAY, nt, a1); if(a1->error) goto nt_type_synch;
-					match(T_LBRACK, nt, a2); if(a2->error) goto nt_type_synch;
-					match(T_NUM, nt, a3); if(a3->error) goto nt_type_synch;
-					match(T_DOUBLEPERIOD, nt, a4); if(a4->error) goto nt_type_synch;
-					match(T_NUM, nt, a5); if(a5->error) goto nt_type_synch;
-					match(T_RBRACK, nt, a6); if(a6->error) goto nt_type_synch;
-					match(T_OF, nt, a7); if(a7->error) goto nt_type_synch;
+					match(T_ARRAY, a1); if(a1->error) goto nt_type_synch;
+					match(T_LBRACK, a2); if(a2->error) goto nt_type_synch;
+					match(T_NUM, a3); if(a3->error) goto nt_type_synch;
+					match(T_DOUBLEPERIOD, a4); if(a4->error) goto nt_type_synch;
+					match(T_NUM, a5); if(a5->error) goto nt_type_synch;
+					match(T_RBRACK, a6); if(a6->error) goto nt_type_synch;
+					match(T_OF, a7); if(a7->error) goto nt_type_synch;
 					consume(NT_STANDARD_TYPE, a8);
 					if(a3->type.st_type == INT && a5->type.st_type == INT) {
 						a0->type = a8->type;
@@ -951,7 +951,7 @@ void consume(NonTerminal nt, Item *a0) {
 		case NT_VARIABLE:
 			switch(currTerm.type) {
 				case T_ID:
-					match(T_ID, nt, a1); if(a1->error) goto nt_variable_synch;
+					match(T_ID, a1); if(a1->error) goto nt_variable_synch;
 					if(checkSymbolTable(a1->lexeme, false)) {
 						a2->in.type = checkSymbolTable(a1->lexeme, false)->type;
 						consume(NT_VARIABLE_, a2);
@@ -974,9 +974,9 @@ void consume(NonTerminal nt, Item *a0) {
 					a0->type = a0->in.type;
 					break;
 				case T_LBRACK:
-					match(T_LBRACK, nt, a1); if(a1->error) goto nt_variable__synch;
+					match(T_LBRACK, a1); if(a1->error) goto nt_variable__synch;
 					consume(NT_EXPRESSION, a2);
-					match(T_RBRACK, nt, a3); if(a3->error) goto nt_variable__synch;
+					match(T_RBRACK, a3); if(a3->error) goto nt_variable__synch;
 					a0->type = a0->in.type;
 					a0->type.isArray = false;
 					break;
