@@ -593,10 +593,13 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 					consume(NT_TERM, a1);
 					consume(NT_SIMPLE_EXPRESSION_, a2);
-					if(a1->type.st_type == INT && a2->type.st_type == INT)
+					if(a2->type.st_type == NONE) {
+						a0->type = a1->type;
+					} else if(a1->type.st_type == INT && a2->type.st_type == INT) {
 						a0->type.st_type = INT;
-					else
+					} else {
 						a0->type.st_type = REAL;
+					}
 					break;
 				case T_MINUS:
 				case T_PLUS:
@@ -620,7 +623,7 @@ void consume(NonTerminal nt, Item *a0) {
 					match(T_ADDOP, a1); if(a1->error) goto nt_simple_expression__synch;
 					consume(NT_TERM, a2);
 					consume(NT_SIMPLE_EXPRESSION_, a3);
-					if(a2->type.st_type == INT && a3->type.st_type == INT)
+					if(a2->type.st_type == INT && (a3->type.st_type == INT || a3->type.st_type == NONE))
 						a0->type.st_type = INT;
 					else
 						a0->type.st_type = REAL;
@@ -634,7 +637,7 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_RPAREN:
 				case T_SEMICOLON:
 				case T_THEN:
-					a0->type.st_type = INT;
+					a0->type.st_type = NONE;
 					break;
 				default:
 					synerr((int[]){T_THEN, T_ELSE, T_COMMA, T_SEMICOLON, T_ADDOP, T_DO, T_RPAREN, T_RELOP, T_RBRACK, T_END}, 10, currTerm);
@@ -868,10 +871,13 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 					consume(NT_FACTOR, a1);
 					consume(NT_TERM_, a2);
-					if(a1->type.st_type == INT && (a2->type.st_type == INT || a2->type.st_type == NONE))
+					if(a2->type.st_type == NONE) {
+						a0->type = a1->type;
+					} else if(a1->type.st_type == INT && a2->type.st_type == INT) {
 						a0->type.st_type = INT;
-					else
+					} else {
 						a0->type.st_type = REAL;
+					}
 					break;
 				default:
 					synerr((int[]){T_ID, T_NUM, T_LPAREN, T_NOT}, 4, currTerm);
@@ -891,13 +897,13 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_RPAREN:
 				case T_SEMICOLON:
 				case T_THEN:
-					a0->type.st_type = INT;
+					a0->type.st_type = NONE;
 					break;
 				case T_MULOP:
 					match(T_MULOP, a1); if(a1->error) goto nt_term__synch;
 					consume(NT_FACTOR, a2);
 					consume(NT_TERM_, a3);
-					if(a2->type.st_type == INT && a3->type.st_type == INT)
+					if(a2->type.st_type == INT && (a3->type.st_type == INT || a3->type.st_type == NONE))
 						a0->type.st_type = INT;
 					else
 						a0->type.st_type = REAL;
