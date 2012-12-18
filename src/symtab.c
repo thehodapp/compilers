@@ -146,6 +146,7 @@ Type unParameterType(Type t) {
 }
 
 char* typeToString(Type t) {
+	if(t.st_type == NONE) return "";
 	char *res = malloc(100*sizeof(char));
 	res[0] = '(';
 	int i = 1;
@@ -163,7 +164,7 @@ char* typeToString(Type t) {
 
 char *stTypeToString(StandardType t) {
 	switch(t) {
-	case NONE: return "unknown";
+	case NONE: return "none";
 	case PGNAME: return "program name";
 	case PGPARM: return "program param";
 	case PROCNAME: return "procedure name";

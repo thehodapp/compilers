@@ -107,8 +107,6 @@ void parse() {
 }
 
 void consume(NonTerminal nt, Item *a0) {
-	for(int i = 0; i < depth; i++) fprintf(fTree, " ");
-	fprintf(fTree, "%s\n", ntToString(nt));
 	depth++;
 	Item *a1 = malloc(sizeof(Item));
 	Item *a2 = malloc(sizeof(Item));
@@ -1098,12 +1096,12 @@ void synch(NonTerminal nt) {
 	}
 }
 
-int match(int termtype, NonTerminal nt, Item *a0) {
+int match(int termtype, Item *a0) {
 	if(currTerm.type == termtype) {
-		for(int i = 0; i < depth; i++) fprintf(fTree, " ");
-		fprintf(fTree, "%s\n", convertConstantToString(currTerm.type));
 		for(int i = 0; i < depth+1; i++) fprintf(fTree, " ");
 		fprintf(fTree, "\"%s\"\n", currTerm.lexeme);
+		for(int i = 0; i < depth; i++) fprintf(fTree, " ");
+		fprintf(fTree, "%s\n", convertConstantToString(currTerm.type));
 
 		a0->lexeme = currTerm.lexeme;
 		if(currTerm.type == T_NUM) {
