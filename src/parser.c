@@ -13,98 +13,71 @@
 #define RET_SEMERR  8
 #define RET_TYPERR 16
 
+#define semerrf(format, ...) \
+char *buff = malloc((strlen(format)+100)*sizeof(char)); \
+sprintf(buff, format, __VA_ARGS__); \
+semerr(buff); \
+free(buff);
+
 extern SymbolTable* root;
 int depth = 0;
 typedef MachineResult Terminal;
-typedef enum {
-	NT_ARGUMENTS,
-	NT_COMPOUND_STATEMENT,
-	NT_COMPOUND_STATEMENT_,
-	NT_DECLARATIONS,
-	NT_DECLARATIONS_,
-	NT_EXPRESSION,
-	NT_EXPRESSION_,
-	NT_EXPRESSION_LIST,
-	NT_EXPRESSION_LIST_,
-	NT_FACTOR,
-	NT_FACTOR_,
-	NT_IDENTIFIER_LIST,
-	NT_IDENTIFIER_LIST_,
-	NT_OPTIONAL_STATEMENTS,
-	NT_PARAMETER_LIST,
-	NT_PARAMETER_LIST_,
-	NT_PROCEDURE_STATEMENT,
-	NT_PROCEDURE_STATEMENT_,
-	NT_PROGRAM,
-	NT_PROGRAM_,
-	NT_PROGRAM__,
-	NT_SIGN,
-	NT_SIMPLE_EXPRESSION,
-	NT_SIMPLE_EXPRESSION_,
-	NT_STANDARD_TYPE,
-	NT_STATEMENT,
-	NT_STATEMENT_,
-	NT_STATEMENT_LIST,
-	NT_STATEMENT_LIST_,
-	NT_SUBPROGRAM_DECLARATION,
-	NT_SUBPROGRAM_DECLARATIONS,
-	NT_SUBPROGRAM_DECLARATIONS_,
-	NT_SUBPROGRAM_DECLARATION_,
-	NT_SUBPROGRAM_DECLARATION__,
-	NT_SUBPROGRAM_HEAD,
-	NT_SUBPROGRAM_HEAD_,
-	NT_TERM,
-	NT_TERM_,
-	NT_TYPE,
-	NT_VARIABLE,
-	NT_VARIABLE_,
-} NonTerminal;
+#define NONTERMS \
+x(NT_ARGUMENTS) \
+x(NT_COMPOUND_STATEMENT) \
+x(NT_COMPOUND_STATEMENT_) \
+x(NT_DECLARATIONS) \
+x(NT_DECLARATIONS_) \
+x(NT_EXPRESSION) \
+x(NT_EXPRESSION_) \
+x(NT_EXPRESSION_LIST) \
+x(NT_EXPRESSION_LIST_) \
+x(NT_FACTOR) \
+x(NT_FACTOR_) \
+x(NT_IDENTIFIER_LIST) \
+x(NT_IDENTIFIER_LIST_) \
+x(NT_OPTIONAL_STATEMENTS) \
+x(NT_PARAMETER_LIST) \
+x(NT_PARAMETER_LIST_) \
+x(NT_PROCEDURE_STATEMENT) \
+x(NT_PROCEDURE_STATEMENT_) \
+x(NT_PROGRAM) \
+x(NT_PROGRAM_) \
+x(NT_PROGRAM__) \
+x(NT_SIGN) \
+x(NT_SIMPLE_EXPRESSION) \
+x(NT_SIMPLE_EXPRESSION_) \
+x(NT_STANDARD_TYPE) \
+x(NT_STATEMENT) \
+x(NT_STATEMENT_) \
+x(NT_STATEMENT_LIST) \
+x(NT_STATEMENT_LIST_) \
+x(NT_SUBPROGRAM_DECLARATION) \
+x(NT_SUBPROGRAM_DECLARATIONS) \
+x(NT_SUBPROGRAM_DECLARATIONS_) \
+x(NT_SUBPROGRAM_DECLARATION_) \
+x(NT_SUBPROGRAM_DECLARATION__) \
+x(NT_SUBPROGRAM_HEAD) \
+x(NT_SUBPROGRAM_HEAD_) \
+x(NT_TERM) \
+x(NT_TERM_) \
+x(NT_TYPE) \
+x(NT_VARIABLE) \
+x(NT_VARIABLE_)
 
+#define x(a) a,
+typedef enum {
+	NONTERMS
+} NonTerminal;
+#undef x
+#define x(a) case a: return #a;
 char* ntToString(NonTerminal nt) {
 	switch(nt) {
-		case NT_ARGUMENTS: return "NT_ARGUMENTS";
-		case NT_COMPOUND_STATEMENT: return "NT_COMPOUND_STATEMENT";
-		case NT_COMPOUND_STATEMENT_: return "NT_COMPOUND_STATEMENT_";
-		case NT_DECLARATIONS: return "NT_DECLARATIONS";
-		case NT_DECLARATIONS_: return "NT_DECLARATIONS_";
-		case NT_EXPRESSION: return "NT_EXPRESSION";
-		case NT_EXPRESSION_: return "NT_EXPRESSION_";
-		case NT_EXPRESSION_LIST: return "NT_EXPRESSION_LIST";
-		case NT_EXPRESSION_LIST_: return "NT_EXPRESSION_LIST_";
-		case NT_FACTOR: return "NT_FACTOR";
-		case NT_FACTOR_: return "NT_FACTOR_";
-		case NT_IDENTIFIER_LIST: return "NT_IDENTIFIER_LIST";
-		case NT_IDENTIFIER_LIST_: return "NT_IDENTIFIER_LIST_";
-		case NT_OPTIONAL_STATEMENTS: return "NT_OPTIONAL_STATEMENTS";
-		case NT_PARAMETER_LIST: return "NT_PARAMETER_LIST";
-		case NT_PARAMETER_LIST_: return "NT_PARAMETER_LIST_";
-		case NT_PROCEDURE_STATEMENT: return "NT_PROCEDURE_STATEMENT";
-		case NT_PROCEDURE_STATEMENT_: return "NT_PROCEDURE_STATEMENT_";
-		case NT_PROGRAM: return "NT_PROGRAM";
-		case NT_PROGRAM_: return "NT_PROGRAM_";
-		case NT_PROGRAM__: return "NT_PROGRAM__";
-		case NT_SIGN: return "NT_SIGN";
-		case NT_SIMPLE_EXPRESSION: return "NT_SIMPLE_EXPRESSION";
-		case NT_SIMPLE_EXPRESSION_: return "NT_SIMPLE_EXPRESSION_";
-		case NT_STANDARD_TYPE: return "NT_STANDARD_TYPE";
-		case NT_STATEMENT: return "NT_STATEMENT";
-		case NT_STATEMENT_: return "NT_STATEMENT_";
-		case NT_STATEMENT_LIST: return "NT_STATEMENT_LIST";
-		case NT_STATEMENT_LIST_: return "NT_STATEMENT_LIST_";
-		case NT_SUBPROGRAM_DECLARATION: return "NT_SUBPROGRAM_DECLARATION";
-		case NT_SUBPROGRAM_DECLARATIONS: return "NT_SUBPROGRAM_DECLARATIONS";
-		case NT_SUBPROGRAM_DECLARATIONS_: return "NT_SUBPROGRAM_DECLARATIONS_";
-		case NT_SUBPROGRAM_DECLARATION_: return "NT_SUBPROGRAM_DECLARATION_";
-		case NT_SUBPROGRAM_DECLARATION__: return "NT_SUBPROGRAM_DECLARATION__";
-		case NT_SUBPROGRAM_HEAD: return "NT_SUBPROGRAM_HEAD";
-		case NT_SUBPROGRAM_HEAD_: return "NT_SUBPROGRAM_HEAD_";
-		case NT_TERM: return "NT_TERM";
-		case NT_TERM_: return "NT_TERM_";
-		case NT_TYPE: return "NT_TYPE";
-		case NT_VARIABLE: return "NT_VARIABLE";
-		case NT_VARIABLE_: return "NT_VARIABLE_";
+		NONTERMS
 	}
+	return "";
 }
+#undef x
 void parse(void);
 void consume(NonTerminal, Item*);
 int match(int, NonTerminal, Item*);
@@ -301,10 +274,7 @@ void consume(NonTerminal nt, Item *a0) {
 						semerr("argument count mismatch at first parameter");
 					} else if(!typeEqual(nthParamOfProc(a0->in.proc, 0)->type, a1->type)) {
 						a0->errHere = true;
-						char *buff = malloc(400*sizeof(char));
-						sprintf(buff, "type mismatch, parameter %d; formal type %s; received type %s", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
-						semerr(buff);
-						free(buff);
+						semerrf("type mismatch, parameter %d; formal type %s; received type %s", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
 					}
 					break;
 				default:
@@ -324,25 +294,16 @@ void consume(NonTerminal nt, Item *a0) {
 
 					if(!nthParamOfProc(a0->in.proc, a0->in.count)) {
 						a0->errHere = true;
-						char *buff = malloc(500);
-						sprintf(buff, "Argument count mismatch while calling procedure %s", a0->in.proc);
-						semerr(buff);
-						free(buff);
-					} else if(!typeEqual(nthParamOfProc(a0->in.proc, a0->in.count)->type,  a2->type)) {
+						semerrf("Argument count mismatch while calling procedure %s", a0->in.proc);
+					} else if(!typeEqual(nthParamOfProc(a0->in.proc, a0->in.count)->type, a2->type)) {
 						a0->errHere = true;
-						char *buff = malloc(500);
-						sprintf(buff, "Type mismatch while calling procedure %s: argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a2->type));
-						semerr(buff);
-						free(buff);
+						semerrf("Type mismatch while calling procedure %s: argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a2->type));
 					}
 					break;
 				case T_RPAREN:
 					if(nthParamOfProc(a0->in.proc, a0->in.count)) {
 						a0->errHere = true;
-						char *buff = malloc(500);
-						sprintf(buff, "Argument count mismatch while calling procedure %s: argument %d, formal param exists; did not pass actual param\n", a0->in.proc, a0->in.count);
-						semerr(buff);
-						free(buff);
+						semerrf("Argument count mismatch while calling procedure %s: argument %d, formal param exists; did not pass actual param\n", a0->in.proc, a0->in.count);
 					}
 					break;
 				default:
@@ -362,10 +323,7 @@ void consume(NonTerminal nt, Item *a0) {
 						a0->type = a2->type;
 					} else {
 						a0->errHere = true;
-						char *buff = malloc(strlen(a1->lexeme) + strlen("Unknown symbol: "));
-						sprintf(buff, "Unknown symbol: %s", a1->lexeme);
-						semerr(buff);
-						free(buff);
+						semerrf("Unknown symbol: %s", a1->lexeme);
 					}
 					break;
 				case T_LPAREN:
@@ -521,10 +479,7 @@ void consume(NonTerminal nt, Item *a0) {
 
 					if(!checkSymbolTable(a2->lexeme, false) || checkSymbolTable(a2->lexeme, false)->type.st_type != PROCNAME) {
 						a0->errHere = true;
-						char *buff = malloc(strlen(a2->lexeme) + strlen("Unknown symbol: "));
-						sprintf(buff, "Unknown symbol: %s", a2->lexeme);
-						semerr(buff);
-						free(buff);
+						semerrf("Unknown symbol: %s", a2->lexeme);
 					}
 					break;
 				default:
@@ -721,10 +676,7 @@ void consume(NonTerminal nt, Item *a0) {
 					consume(NT_EXPRESSION, a3);
 					if(!typeEqual(a1->type, a3->type)) {
 						a0->errHere = true;
-						char *buff = malloc(100);
-						sprintf(buff, "Type mismatch on an assignment: tried assigning %s to %s", typeToString(a3->type), typeToString(a1->type));
-						semerr(buff);
-						free(buff);
+						semerrf("Type mismatch on an assignment: tried assigning %s to %s", typeToString(a3->type), typeToString(a1->type));
 					}
 					break;
 				case T_IF:
@@ -1006,10 +958,7 @@ void consume(NonTerminal nt, Item *a0) {
 						a0->type = a2->type;
 					} else {
 						a0->errHere = true;
-						char *buff = malloc(strlen(a1->lexeme) + strlen("Unknown symbol: "));
-						sprintf(buff, "Unknown symbol: %s", a1->lexeme);
-						semerr(buff);
-						free(buff);
+						semerrf("Unknown symbol: %s", a1->lexeme);
 					}
 					break;
 				default:
