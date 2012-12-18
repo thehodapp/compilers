@@ -263,17 +263,17 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_NUM:
 				case T_PLUS:
 					consume(NT_EXPRESSION, a1);
-					a2->in.count = 1;
-					a2->in.proc = a0->in.proc;
-					consume(NT_EXPRESSION_LIST_, a2);
 					
-					if(!nthParamOfProc(a0->in.proc, 0)) {
+					if(!nthParamOfProc(a0->in.proc, 1)) {
 						a0->errHere = true;
 						semerr("argument count mismatch at first parameter");
 					} else if(!typeEqual(nthParamOfProc(a0->in.proc, 0)->type, a1->type)) {
 						a0->errHere = true;
 						semerrf("type mismatch, parameter %d; formal type %s; received type %s", a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a1->type));
 					}
+					a2->in.count = 2;
+					a2->in.proc = a0->in.proc;
+					consume(NT_EXPRESSION_LIST_, a2);
 					break;
 				default:
 					synerr((int[]){T_ID, T_LPAREN, T_NUM, T_PLUS, T_MINUS, T_NOT}, 6, currTerm);
@@ -286,9 +286,6 @@ void consume(NonTerminal nt, Item *a0) {
 				case T_COMMA:
 					match(T_COMMA, a1); if(a1->error) goto nt_expression_list__synch;
 					consume(NT_EXPRESSION, a2);
-					a3->in.count = a0->in.count + 1;
-					a3->in.proc = a0->in.proc;
-					consume(NT_EXPRESSION_LIST_, a3);
 
 					if(!nthParamOfProc(a0->in.proc, a0->in.count)) {
 						a0->errHere = true;
@@ -297,6 +294,9 @@ void consume(NonTerminal nt, Item *a0) {
 						a0->errHere = true;
 						semerrf("Type mismatch while calling procedure %s: argument %d, formal param type %s, actual param type %s\n", a0->in.proc, a0->in.count, typeToString(nthParamOfProc(a0->in.proc, a0->in.count)->type), typeToString(a2->type));
 					}
+					a3->in.proc = a0->in.proc;
+					a3->in.count = a0->in.count + 1;
+					consume(NT_EXPRESSION_LIST_, a3);
 					break;
 				case T_RPAREN:
 					if(nthParamOfProc(a0->in.proc, a0->in.count)) {

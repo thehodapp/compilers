@@ -101,12 +101,15 @@ void exitProcedure() {
 	shouldTurn = false;
 }
 
+// 1-indexed!
 SymbolTableEntry* nthParamOfProc(char* word, int n) {
 	SymbolTable* proc = findNode(word, false);
 	SymbolTable* pParam = proc;
-	for(int i = 0; i <= n; i++) {
-		if(!i) pParam = pParam->lchild;
-		else pParam = pParam->next;
+	pParam = proc->lchild;
+	if(!pParam || !pParam->entry->type.isParam) return NULL;
+	//step n-1 times
+	for(int i = 1; i < n; i++) {
+		pParam = pParam->next;
 		if(!pParam || !pParam->entry->type.isParam)
 			return NULL;
 	}
