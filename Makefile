@@ -7,10 +7,10 @@ clean:
 	rm -f doc/grammar/*.tex
 	if [ -e doc/grammar -a ! "$(ls -A doc/grammar )" ]; then rmdir doc/grammar; fi
 	rm -f doc/report*.aux doc/report*.toc doc/report*.log doc/report*.pdf doc/report*.dvi doc/report*.out
-	rm -f tests/*.tree tests/*.lst
+	rm -f tests/*.tree tests/*.lst tests/*.tbl
 
-src/parser: src/parser.c
-	gcc -Wall -g -std=c99 src/parser.c src/machines.c src/types.c -o src/parser
+src/parser: src/parser.c src/machines.c src/types.c src/symtab.c
+	gcc -Wall -Wextra -g -std=c99 src/parser.c src/machines.c src/types.c src/symtab.c -o src/parser
 	chmod +x src/parser
 
 src/gen.c: src/parser.c.py src/firstfollow.py src/massage.py src/rules.py src/table.py
@@ -38,8 +38,13 @@ doc/grammar:
 tests/minimal.tree: tests/minimal.pas src/parser
 	src/parser tests/minimal.pas
 tests/blank.tree: tests/blank.pas src/parser
-	! src/parser tests/blank.pas
+	! src/parser tests/blank.pas 2> /dev/null
+tests/shenoi.tree: tests/shenoi.pas src/parser
+	src/parser tests/shenoi.pas
 tests/minimal.lst: tests/minimal.pas src/parser
 	src/parser tests/minimal.pas
 tests/blank.lst: tests/blank.pas src/parser
-	! src/parser tests/blank.pas
+	! src/parser tests/blank.pas 2> /dev/null
+tests/shenoi.lst: tests/shenoi.pas src/parser
+	src/parser tests/shenoi.pas
+tests: tests/minimal.tree tests/blank.tree tests/shenoi.tree tests/minimal.lst tests/blank.lst tests/shenoi.lst
