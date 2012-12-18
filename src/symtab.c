@@ -180,7 +180,7 @@ char *stTypeToString(StandardType t) {
 bool typeEqual(Type t1, Type t2) {
 	if(t1.st_type != t2.st_type) return false;
 	if(t1.isArray != t2.isArray) return false;
-	if(t1.isArray == true) {
+	if(t1.isArray) {
 		if(t1.low != t2.low) return false;
 		if(t1.high != t2.high) return false;
 	}
