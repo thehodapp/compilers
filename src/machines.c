@@ -470,8 +470,8 @@ void machinesInit(char* sfReservedWords) {
 static Machine machines[] = {&mach_ws, &mach_idres, &mach_longreal, &mach_real, &mach_int, &mach_relop, &mach_catchall, &mach_endoffile};
 
 MachineResult identifyToken(char* str) {
-	int i;
-	for(i = 0; i < sizeof(machines)/sizeof(machines[0]); i++) {
+	unsigned int i;
+	for(i = 0; i < sizeof(machines)/sizeof(*machines); i++) {
 		MachineResult res = (*(machines[i]))(str);
 		if(res.error) {
 			res.type = T_LEXERR;
