@@ -16,7 +16,7 @@ src/parser: src/parser.c src/machines.c src/types.c src/symtab.c
 src/gen.c: src/parser.c.py src/firstfollow.py src/massage.py src/rules.py src/table.py
 	python src/parser.c.py > src/gen.c
 
-doc: doc/report.pdf doc/report2.pdf
+doc: doc/report.pdf doc/report2.pdf doc/report3.pdf
 
 doc/report.pdf: doc/report.tex doc/grammar/initial.tex doc/grammar/recursion.tex doc/grammar/factoring.tex tests/minimal.pas tests/minimal.tree tests/blank.pas tests/blank.lst src/parser.c src/massage.py src/firstfollow.py src/table.py
 	cd doc; pdflatex report.tex; cd ..;
@@ -25,6 +25,10 @@ doc/report.pdf: doc/report.tex doc/grammar/initial.tex doc/grammar/recursion.tex
 doc/report2.pdf: doc/report.tex doc/grammar/initial.tex doc/grammar/recursion.tex doc/grammar/factoring.tex tests/minimal.pas tests/minimal.tree tests/blank.pas tests/blank.lst src/parser.c src/massage.py src/firstfollow.py src/table.py
 	cd doc; cp report.tex report2.tex; pdflatex "\def\includePython{}\input{report2.tex}"; rm report2.tex; cd ..;
 	cd doc; cp report.tex report2.tex; pdflatex "\def\includePython{}\input{report2.tex}"; rm report2.tex; cd ..;
+
+doc/report3.pdf: doc/report3.tex doc/grammar/initial.tex doc/grammar/recursion.tex doc/grammar/factoring.tex src/parser.c tests/shenoi.pas tests/shenoi.tbl
+	cd doc; pdflatex report3.tex; cd ..;
+	cd doc; pdflatex report3.tex; cd ..;
 
 doc/grammar/initial.tex: src/grammarToLatex.py doc/grammar
 	python src/grammarToLatex.py --initial doc/grammar/initial.tex
@@ -40,6 +44,8 @@ tests/minimal.tree: tests/minimal.pas src/parser
 tests/blank.tree: tests/blank.pas src/parser
 	! src/parser tests/blank.pas 2> /dev/null
 tests/shenoi.tree: tests/shenoi.pas src/parser
+	src/parser tests/shenoi.pas
+tests/shenoi.tbl: tests/shenoi.pas src/parser
 	src/parser tests/shenoi.pas
 tests/minimal.lst: tests/minimal.pas src/parser
 	src/parser tests/minimal.pas

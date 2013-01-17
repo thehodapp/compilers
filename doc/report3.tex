@@ -1,0 +1,124 @@
+\documentclass[titlepage]{article}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{graphics}
+\usepackage[colorlinks=true]{hyperref}
+\usepackage[a4paper]{geometry}
+
+\newcommand{\deriv}{\overset{*}{\Rightarrow}}
+\newcommand{\ep}{\epsilon}
+
+\setcounter{secnumdepth}{-1}
+% settings for code listings
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+ 
+\lstset{ %
+  language=C,                % the language of the code
+  basicstyle=\footnotesize\ttfamily,           % the size of the fonts that are used for the code
+  numbers=left,                   % where to put the line-numbers
+  numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
+  stepnumber=1,                   % the step between two line-numbers. If it's 1, each line 
+                                  % will be numbered
+  numbersep=5pt,                  % how far the line-numbers are from the code
+  backgroundcolor=\color{white},      % choose the background color. You must add \usepackage{color}
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores
+  %frame=single,                   % adds a frame around the code
+  rulecolor=\color{black},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. commens (green here))
+  tabsize=2,                      % sets default tabsize to 2 spaces
+%  captionpos=t,                   % sets the caption-position to top
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=true,        % sets if automatic breaks should only happen at whitespace
+%  title=\lstname,                   % show the filename of files included with \lstinputlisting;
+                                  % also try caption instead of title
+  keywordstyle=\color{blue},          % keyword style
+  commentstyle=\color{dkgreen},       % comment style
+  stringstyle=\color{gray},         % string literal style
+  escapeinside={\%*}{*)},            % if you want to add a comment within your code
+  morekeywords={*,...}               % if you want to add more keywords to the set
+}
+
+\author{Christian Mann}
+\title{Compiler Construction \\ Project 3}
+\date{\today}
+
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\section{Introduction}
+	This is the third and final phase of the front-end of a compiler for a limited subset of the Pascal language.
+
+	This phase involves the addition of semantic actions to the parser. The definition is L-attributed.
+
+	The semantic analyzer identifies and reports type errors, and computes scope of variables as well as memory addresses (offsets in a given stack frame).
+	\section{Methodology}
+		\subsection{Symbol Table}
+		The first task was the redesign and reimplementation of the symbol table, in order to support scoping rules. In the previous project the symbol table was simply a linked list. In this project, I reorganized it to be more hierarchical.
+
+		\subsection{Type System}
+		I needed to create a type system that could distinguish between program parameters and local variables, and track information about arrays and bounds.
+
+		\subsection{L-Attributed Definitions}
+		I then took the fully massaged SDD from Project 2, and added semantic actions for each transition. Then I implemented them in my parser.
+
+	\section{Implementation}
+		\subsection{Symbol Table}
+		Each node in the symbol table has a field for the entry itself, a pointer to a parent, a pointer to its leftmost child, a pointer to its previous sibling, and a pointer to its next sibling. These are all \texttt{NULL} unless otherwise specified.
+
+		A symbol table entry has a \texttt{char*} for its lexeme, as well as a Type. Types will be discussed later.
+
+		When a local variable is declared, a new node is tacked onto the end of the table (via \texttt{next}), and the \texttt{parent} pointer is copied. When a new procedure is declared, it is also tacked onto the end of the table, but a note is made that the next variable should be added via \texttt{lchild}. When a procedure is exited, the frontier is changed to be the \texttt{parent} of the previous frontier. It's a tree.
+
+		In order to look for a node in the symbol table, one simply looks up (never down) the tree.
+
+		\subsection{Type System}
+		Every object (terminal or nonterminal) has a type. A Type is composed of a StandardType, as well as flags marking arrays and procedure parameters, as well as lower and upper bounds (integers; for arrays).
+
+		A StandardType is either NONE, PGNAME, PGPARM, PROCNAME, REAL, or INT.
+
+		\subsection{L-Attributed Definitions}
+		In order to implement the L-attributed definitions, I added a new \texttt{Item} class to hold onto a few values: An \texttt{in} parameter, to hold any inherited attributes, as well as some synthesized attributes: a type, a lexeme, an error flag, as well as an error* flag.
+
+		The \texttt{consume} method takes as a parameter a pointer to an Item, whose values it modifies, usually using synthesized attributes from its children.
+	\section{Discussion and Conclusions}
+		\subsection{Testing}
+		Unit testing was very important to ensure the correctness of the program. To that end, programs were written that rigorously tested each production on edge and corner cases, for both valid and erroneous inputs. In addition, many sample Pascal programs were written and the program as a whole was verified to work correctly.
+	\begin{thebibliography}{9}
+		\bibitem{Textbook}
+			Aho, Sethi, and Ullman.
+			\emph{Compilers: Principles, Techniques, and Tools}.
+			1st ed.
+			Pearson Education, Inc: 2006. Print.
+	\end{thebibliography}
+	\appendix
+	\section{Grammar}
+		\input{grammar/recursion.tex}
+	\section{Sample Inputs and Outputs}
+		\subsection{Minimal Example}
+		\begin{minipage}[t]{0.5\textwidth}
+			\subsubsection{Pascal Code}
+			\lstinputlisting[language=Pascal]{../tests/minimal.pas}
+		\end{minipage}
+		\begin{minipage}[t]{0.5\textwidth}
+			\subsubsection{Parse Tree}
+			\lstinputlisting[language=XML]{../tests/minimal.tree}
+		\end{minipage}
+		\subsection{Large Example}
+		\begin{minipage}[t]{0.5\textwidth}
+			\subsubsection{Pascal Code}
+			\lstinputlisting[language=Pascal]{../tests/shenoi.pas}
+		\end{minipage}
+		\begin{minipage}[t]{0.5\textwidth}
+			\subsubsection{Variable Offsets}
+			\lstinputlisting[language=XML]{../tests/shenoi.tbl}
+		\end{minipage}
+	\section{Program Listings}
+		\subsection{parser.c}
+		\lstinputlisting[language=C]{../src/parser.c}
+		\subsection{symtab.c}
+		\lstinputlisting[language=C]{../src/symtab.c}
+\end{document}
