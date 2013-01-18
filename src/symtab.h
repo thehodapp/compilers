@@ -1,4 +1,5 @@
 #include<stdbool.h>
+#include<stdio.h>
 #ifndef SYMTAB_H
 #define SYMTAB_H
 

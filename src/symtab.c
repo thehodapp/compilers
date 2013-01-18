@@ -104,6 +104,7 @@ void exitProcedure() {
 // 1-indexed!
 SymbolTableEntry* nthParamOfProc(char* word, int n) {
 	SymbolTable* proc = findNode(word, false);
+	if(proc == NULL) return NULL;
 	SymbolTable* pParam = proc;
 	pParam = proc->lchild;
 	if(!pParam || !pParam->entry->type.isParam) return NULL;

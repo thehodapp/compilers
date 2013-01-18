@@ -9,8 +9,8 @@ clean:
 	rm -f doc/report*.aux doc/report*.toc doc/report*.log doc/report*.pdf doc/report*.dvi doc/report*.out
 	rm -f tests/*.tree tests/*.lst tests/*.tbl
 
-src/parser: src/parser.c src/machines.c src/types.c src/symtab.c
-	gcc -Wall -Wextra -g -std=c99 src/parser.c src/machines.c src/types.c src/symtab.c -o src/parser
+src/parser: src/parser.c src/machines.c src/types.c src/symtab.c src/item.c
+	gcc -Wall -Wextra -g -std=c99 src/parser.c src/machines.c src/types.c src/symtab.c src/item.c -o src/parser
 	chmod +x src/parser
 
 src/gen.c: src/parser.c.py src/firstfollow.py src/massage.py src/rules.py src/table.py
@@ -26,7 +26,7 @@ doc/report2.pdf: doc/report.tex doc/grammar/initial.tex doc/grammar/recursion.te
 	cd doc; cp report.tex report2.tex; pdflatex "\def\includePython{}\input{report2.tex}"; rm report2.tex; cd ..;
 	cd doc; cp report.tex report2.tex; pdflatex "\def\includePython{}\input{report2.tex}"; rm report2.tex; cd ..;
 
-doc/report3.pdf: doc/report3.tex doc/grammar/initial.tex doc/grammar/recursion.tex doc/grammar/factoring.tex src/parser.c tests/shenoi.pas tests/shenoi.tbl
+doc/report3.pdf: doc/report3.tex doc/grammar/initial.tex doc/grammar/recursion.tex doc/grammar/factoring.tex src/parser.c tests/shenoi.pas tests/shenoi.tbl tests/minimal.pas tests/minimal.tree
 	cd doc; pdflatex report3.tex; cd ..;
 	cd doc; pdflatex report3.tex; cd ..;
 

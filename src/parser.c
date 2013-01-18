@@ -107,15 +107,22 @@ void parse() {
 }
 
 void consume(NonTerminal nt, Item *a0) {
+	for(int i = 0; i < depth; i++) fprintf(fTree, " ");
+	fprintf(fTree, "%s", ntToString(nt));
+	fprintf(fTree, " %s", typeToString(a0->type));
+	if(a0->error) fprintf(fTree, " ERR");
+	if(a0->errHere) fprintf(fTree, " ERR*");
+	fprintf(fTree, "\n");
 	depth++;
-	Item *a1 = malloc(sizeof(Item));
-	Item *a2 = malloc(sizeof(Item));
-	Item *a3 = malloc(sizeof(Item));
-	Item *a4 = malloc(sizeof(Item));
-	Item *a5 = malloc(sizeof(Item));
-	Item *a6 = malloc(sizeof(Item));
-	Item *a7 = malloc(sizeof(Item));
-	Item *a8 = malloc(sizeof(Item));
+
+	Item *a1 = createItem();
+	Item *a2 = createItem();
+	Item *a3 = createItem();
+	Item *a4 = createItem();
+	Item *a5 = createItem();
+	Item *a6 = createItem();
+	Item *a7 = createItem();
+	Item *a8 = createItem();
 
 	switch(nt) {
 		case NT_ARGUMENTS:
@@ -677,7 +684,7 @@ void consume(NonTerminal nt, Item *a0) {
 					consume(NT_EXPRESSION, a3);
 					if(!typeEqual(a1->type, a3->type)) {
 						a0->errHere = true;
-						semerrf("Type mismatch on an assignment: tried assigning %s to %s", typeToString(a3->type), typeToString(a1->type));
+						semerrf("Type mismatch on an assignment: tried assigning %s to %s while parsing %s: next term is %s", typeToString(a3->type), typeToString(a1->type), ntToString(nt), convertConstantToString(currTerm.type));
 					}
 					break;
 				case T_IF:
@@ -993,12 +1000,6 @@ void consume(NonTerminal nt, Item *a0) {
 			break;
 
 	}
-	for(int i = 0; i < depth; i++) fprintf(fTree, " ");
-	fprintf(fTree, "%s", ntToString(nt));
-	fprintf(fTree, " %s", typeToString(a0->type));
-	if(a0->error) fprintf(fTree, " ERR");
-	if(a0->errHere) fprintf(fTree, " ERR*");
-	fprintf(fTree, "\n");
 	depth--;
 	if(a1->errHere || a1->error || a2->errHere || a2->error || a3->errHere || a3->error || a4->errHere || a4->error || a5->errHere || a5->error || a6->errHere || a6->error || a7->errHere || a7->error || a8->errHere || a8->error) {
 		a0->error = true;
@@ -1104,10 +1105,10 @@ void synch(NonTerminal nt) {
 
 int match(int termtype, Item *a0) {
 	if(currTerm.type == termtype) {
-		for(int i = 0; i < depth+1; i++) fprintf(fTree, " ");
-		fprintf(fTree, "\"%s\"\n", currTerm.lexeme);
 		for(int i = 0; i < depth; i++) fprintf(fTree, " ");
 		fprintf(fTree, "%s\n", convertConstantToString(currTerm.type));
+		for(int i = 0; i < depth+1; i++) fprintf(fTree, " ");
+		fprintf(fTree, "\"%s\"\n", currTerm.lexeme);
 
 		a0->lexeme = currTerm.lexeme;
 		if(currTerm.type == T_NUM) {

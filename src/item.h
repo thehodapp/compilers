@@ -13,4 +13,6 @@ typedef struct item {
 	bool error;
 	bool errHere;
 } Item;
+
+Item* createItem(void);
 #endif
