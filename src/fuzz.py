@@ -52,7 +52,7 @@ patterns = {
 	"T_ID": genID,
 	"T_VAR": lambda: rstr.xeger(r'var'),
 	"T_ARRAY": lambda: rstr.xeger(r'array'),
-	"T_NUM": lambda: rstr.xeger(r'(0)|([1-9]\d{0,9})|(\d{1,5}\.\d{1,5})|(\d{1,5}\.\d{1,5}E[1-9]\d?)'),
+	"T_NUM": lambda: rstr.xeger(r'(0)|([1-9]\d{0,9})|([1-9]\d{0,4}\.\d{1,5})|([1-9]\d{0,4}\.\d{1,5}E[1-9]\d?)'),
 	"T_OF": lambda: rstr.xeger(r'of'),
 	"T_INTEGER": lambda: rstr.xeger(r'integer'),
 	"T_REAL": lambda: rstr.xeger(r'real'),
