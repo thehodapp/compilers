@@ -1,4 +1,4 @@
-from rules2012 import *
+from rules2013 import *
 import copy
 import itertools
 

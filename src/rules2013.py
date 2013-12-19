@@ -100,6 +100,7 @@ P = [
 	("NT_TERM", "NT_FACTOR".split()),
 	("NT_TERM", "NT_TERM T_MULOP NT_FACTOR".split()),
 	("NT_FACTOR", "T_ID".split()),
+	("NT_FACTOR", "T_ID T_LPAREN NT_EXPRESSION_LIST T_RPAREN".split()),
 	("NT_FACTOR", "T_ID T_LBRACK NT_EXPRESSION T_RBRACK".split()),
 	("NT_FACTOR", "T_NUM".split()),
 	("NT_FACTOR", "T_LPAREN NT_EXPRESSION T_RPAREN".split()),
