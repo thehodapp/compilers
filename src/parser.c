@@ -684,7 +684,7 @@ void consume(NonTerminal nt, Item *a0) {
 					consume(NT_EXPRESSION, a3);
 					if(!typeEqual(a1->type, a3->type)) {
 						a0->errHere = true;
-						semerrf("Type mismatch on an assignment: tried assigning %s to %s while parsing %s: next term is %s", typeToString(a3->type), typeToString(a1->type), ntToString(nt), convertConstantToString(currTerm.type));
+						semerrf("Type mismatch on an assignment: tried assigning %s to %s", typeToString(a3->type), typeToString(a1->type));
 					}
 					break;
 				case T_IF:
