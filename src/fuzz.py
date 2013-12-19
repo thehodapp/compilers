@@ -19,6 +19,7 @@ rwords = [
 	'integer',
 	'real',
 	'procedure',
+    'function',
 	'begin',
 	'end',
 	'if',
