@@ -1,4 +1,4 @@
-from rules import *
+from rules2012 import *
 import sys
 import random
 import re
