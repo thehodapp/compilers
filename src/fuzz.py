@@ -57,6 +57,7 @@ patterns = {
 	"T_INTEGER": lambda: rstr.xeger(r'integer'),
 	"T_REAL": lambda: rstr.xeger(r'real'),
 	"T_PROCEDURE": lambda: rstr.xeger(r'procedure'),
+        "T_FUNCTION": lambda: rstr.xeger(r'function'),
 	"T_BEGIN": lambda: rstr.xeger(r'begin'),
 	"T_END": lambda: rstr.xeger(r'end'),
 	"T_ASSIGNOP": lambda: rstr.xeger(r':='),
